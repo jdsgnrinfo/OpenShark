@@ -3,10 +3,10 @@
     <source media="(prefers-color-scheme: dark)" srcset="docs/logo/open-shark-blanco.png">
     <img src="docs/logo/open-shark-negro.png" alt="Open Shark" width="420">
   </picture>
+  <br><br>
 </h1>
 
-
-
+<br>
 
 Configurador abierto para ratones **Attack Shark**: una interfaz más clara que la
 oficial y pensada para quien tiene varios ratones de la marca. Cada ratón

@@ -5,11 +5,10 @@
     <source media="(prefers-color-scheme: dark)" srcset="docs/logo/open-shark-blanco.png">
     <img src="docs/logo/open-shark-negro.png" alt="Open Shark" width="420">
   </picture>
+  <br>
+  <br>
   <br><br>
 </h1>
-
-<br>
-<br>
 <br>
 <br>
 

@@ -5,7 +5,6 @@
     <img src="docs/logo/open-shark-negro.png" alt="Open Shark" width="420">
   </picture>
   <br>
-  <br>
   <br><br>
 </h1>
 

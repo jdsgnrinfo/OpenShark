@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.log
+# Bocetos de diseño: solo locales
+mockups/
+tools/serve-mockups.js

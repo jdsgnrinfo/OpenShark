@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>Open Shark</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Barra de título propia (se arrastra para mover la ventana) -->
+  <div class="titlebar"><img src="../main/assets/tray@2x.png" alt="" width="16" height="16"><span>Open Shark</span></div>
+
+  <section id="empty-state" class="empty">
+    <div class="empty-card">
+      <div id="empty-mouse" class="empty-mouse"></div>
+      <h1>Conecta un ratón Attack Shark</h1>
+      <p class="muted">Enchufa el receptor 2.4 GHz o el cable. Aparecerá aquí en un par de segundos.</p>
+    </div>
+  </section>
+
+  <div id="shell" class="app" hidden>
+    <!-- Arriba: ratones conectados, nombre del ratón con su estado, conexión y batería -->
+    <header class="top">
+      <nav id="device-switch" class="device-switch" aria-label="Tus ratones"></nav>
+      <div class="device">
+        <input id="nickname" class="title" aria-label="Nombre del ratón" spellcheck="false">
+        <span id="status-dot" class="dot" role="img" aria-labelledby="status-text"></span>
+        <span id="status-text" class="sr-only">Conectado</span>
+      </div>
+      <span class="spacer"></span>
+      <div id="top-chips" class="chips"></div>
+    </header>
+
+    <!-- Izquierda: secciones -->
+    <nav class="rail" id="rail" role="tablist" aria-label="Secciones"></nav>
+
+    <!-- Centro: el ratón -->
+    <section class="stage" id="stage">
+      <div class="stage-title"><h1 id="sec-title"></h1><p id="sec-sub"></p></div>
+      <div class="stage-fit" id="stage-fit"></div>
+      <div class="stage-foot" id="stage-foot"></div>
+    </section>
+
+    <!-- Derecha: configuración de la sección -->
+    <aside class="drawer">
+      <div class="drawer-head"><small id="drawer-kicker"></small><h2 id="drawer-title"></h2></div>
+      <div class="drawer-body" id="panel" role="tabpanel"></div>
+      <div class="drawer-foot">
+        <p id="dirty-text" class="dirty-text">Todo está aplicado en el ratón.</p>
+        <div class="foot-btns">
+          <button class="btn ghost" id="discard" disabled>Descartar</button>
+          <button class="btn primary" id="apply">Aplicar</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Confirmaciones y nombres -->
+  <dialog id="dialog" class="modal">
+    <form method="dialog">
+      <h2 id="dialog-title"></h2>
+      <p id="dialog-text" class="muted"></p>
+      <input id="dialog-input" hidden>
+      <menu>
+        <button type="button" id="dialog-cancel" class="btn ghost">Cancelar</button>
+        <button value="ok" id="dialog-ok" class="btn primary">Aceptar</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Configuración del programa (no del ratón) -->
+  <dialog class="modal settings" id="settings" aria-labelledby="settings-title">
+    <header><h2 id="settings-title">Configuración de Open Shark</h2>
+      <button class="x" data-close aria-label="Cerrar"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></header>
+    <div class="body">
+      <h3>Apariencia</h3>
+      <div class="theme-pick" id="theme-pick">
+        <button data-theme-opt="light" aria-pressed="false"><span class="swatch light"></span>Claro</button>
+        <button data-theme-opt="dark" aria-pressed="false"><span class="swatch dark"></span>Oscuro</button>
+        <button data-theme-opt="system" aria-pressed="false"><span class="swatch auto"></span>Como Windows</button>
+      </div>
+      <h3>Al cerrar la ventana</h3>
+      <div class="row"><span class="label">Mantener en la bandeja del sistema<small>Open Shark sigue activo junto al reloj. Si lo desactivas, cerrar la ventana cierra el programa.</small></span>
+        <button class="switch" id="opt-tray" role="switch" aria-checked="false" aria-label="Mantener en la bandeja del sistema"></button></div>
+      <div class="row"><span class="label">Iniciar con Windows<small>Arranca minimizado en la bandeja al encender el PC.</small></span>
+        <button class="switch" id="opt-login" role="switch" aria-checked="false" aria-label="Iniciar con Windows"></button></div>
+      <h3>Diagnóstico</h3>
+      <div class="row"><span class="label">Registro de diagnóstico<small>Anota qué ratones se detectan y qué ajustes se aplican. Adjúntalo al informar de un fallo o de otro modelo.</small></span>
+        <button class="btn ghost small" id="open-logs">Abrir carpeta</button></div>
+    </div>
+    <footer><small id="app-version">Open Shark</small><button class="btn primary" data-close>Listo</button></footer>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

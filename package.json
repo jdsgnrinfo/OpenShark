@@ -1,0 +1,44 @@
+{
+  "name": "open-shark",
+  "productName": "Open Shark",
+  "version": "0.1.0",
+  "description": "Configurador abierto para ratones Attack Shark, con soporte para varios ratones a la vez.",
+  "main": "src/main/main.js",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "probe": "node tools/probe.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "dist": "electron-builder --win zip --x64"
+  },
+  "dependencies": {
+    "node-hid": "^3.1.0"
+  },
+  "devDependencies": {
+    "@fontsource/big-shoulders-display": "^5.0.0",
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/instrument-sans": "^5.0.0",
+    "@fontsource/jetbrains-mono": "^5.0.0",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.openshark.app",
+    "productName": "Open Shark",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "!src/renderer/assets/*-original.*",
+      "!src/main/assets/icon-source.png",
+      "package.json"
+    ],
+    "win": {
+      "icon": "src/main/assets/icon.ico",
+      "target": ["zip"]
+    },
+    "artifactName": "OpenShark-${version}-portable-win-x64.${ext}"
+  }
+}

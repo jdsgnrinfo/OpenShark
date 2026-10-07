@@ -57,6 +57,10 @@ test('macro: 3 trozos de 64 bytes que reconstruyen el paquete', () => {
 test('entrada: batería y ACK', () => {
   assert.deepStrictEqual(x6.parseInput(Buffer.from([3, 0x10, 0x40, 1, 10])), { type: 'status', state: 'online', battery: 100 });
   assert.deepStrictEqual(x6.parseInput(Buffer.from([3, 0x10, 0x50, 0, 6])), { type: 'ack', ok: true, reportId: 6 });
+  assert.strictEqual(x6.parseInput(Buffer.from([3, 0x10, 0x40, 2, 6]), { wired: true }).state, 'charging');
+  // V0 = 3: en reposo sin cable; con cable (capturado del X6 al 100 %) es carga completa
+  assert.strictEqual(x6.parseInput(Buffer.from([3, 0x10, 0x40, 3, 10])).state, 'sleeping');
+  assert.strictEqual(x6.parseInput(Buffer.from([3, 0x10, 0x40, 3, 10]), { wired: true }).state, 'charged');
 });
 
 test('validación: exige un clic izquierdo', () => {

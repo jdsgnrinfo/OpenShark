@@ -19,68 +19,72 @@ const LOD_AT_BYTE3 = true;
 const POLLING_RATES = [125, 250, 500, 1000];
 const POLLING_CODES = [0x08, 0x04, 0x02, 0x01];
 
+// Nombres de referencia (inglés). La interfaz muestra los suyos según el idioma.
 const LIGHT_MODES = [
-  'Apagado', 'Estático', 'Respiración', 'Neón', 'Respiración multicolor', 'DPI estático',
-  'DPI respiración', 'Onda arcoíris', 'Relámpago', 'Mezcla estática', 'Marquesina', 'Marquesina 2',
+  'Off', 'Static', 'Breathing', 'Neon', 'Multicolor breathing', 'DPI static',
+  'DPI breathing', 'Rainbow wave', 'Lightning', 'Static blend', 'Marquee', 'Marquee 2',
 ];
 
-/** Funciones asignables a un botón: id interno de la app → bytes del firmware. */
+/**
+ * Funciones asignables a un botón: id interno de la app → bytes del firmware.
+ * El nombre es de referencia (inglés); la interfaz lo traduce por id y el grupo por clave.
+ */
 const BUTTON_FUNCTIONS = [
   // [id, nombre, grupo, b0, b1, b2]
-  [0x00, 'Desactivado', 'Ratón', 0x01, 0, 0],
-  [0x01, 'Clic izquierdo', 'Ratón', 0x02, 0, 0],
-  [0x02, 'Clic derecho', 'Ratón', 0x03, 0, 0],
-  [0x03, 'Clic central', 'Ratón', 0x04, 0, 0],
-  [0x04, 'Adelante', 'Ratón', 0x06, 0, 0],
-  [0x05, 'Atrás', 'Ratón', 0x05, 0, 0],
-  [0x09, 'Doble clic', 'Ratón', 0x07, 0, 0],
-  [0x0a, 'Disparo rápido', 'Ratón', 0x08, 0, 0],
-  [0x0b, 'Rueda arriba', 'Ratón', 0x09, 0, 0],
-  [0x0c, 'Rueda abajo', 'Ratón', 0x0a, 0, 0],
-  [0x0d, 'Desplazar a la izquierda', 'Ratón', 0x0b, 0, 0],
-  [0x0e, 'Desplazar a la derecha', 'Ratón', 0x0c, 0, 0],
-  [0x16, 'Easy Aim', 'Ratón', 0x10, 0x00, 0x03],
-  [0x06, 'Ciclo de DPI', 'DPI y luz', 0x0d, 0, 0],
-  [0x07, 'DPI +', 'DPI y luz', 0x0e, 0, 0],
-  [0x08, 'DPI −', 'DPI y luz', 0x0f, 0, 0],
-  [0x17, 'Ciclo de iluminación', 'DPI y luz', 0x29, 0x00, 0x03],
-  [0x34, 'Cambio de modo', 'DPI y luz', 0x3c, 0, 0],
-  [0x40, 'Reproductor', 'Multimedia', 0x15, 0, 0],
-  [0x41, 'Reproducir / pausa', 'Multimedia', 0x18, 0, 0],
-  [0x42, 'Detener', 'Multimedia', 0x19, 0, 0],
-  [0x43, 'Pista anterior', 'Multimedia', 0x16, 0, 0],
-  [0x44, 'Pista siguiente', 'Multimedia', 0x17, 0, 0],
-  [0x45, 'Subir volumen', 'Multimedia', 0x1b, 0, 0],
-  [0x46, 'Bajar volumen', 'Multimedia', 0x1c, 0, 0],
-  [0x47, 'Silenciar', 'Multimedia', 0x1a, 0, 0],
-  [0x50, 'Inicio del navegador', 'Navegador y sistema', 0x25, 0, 0],
-  [0x51, 'Favoritos', 'Navegador y sistema', 0x11, 0x03, 0x12],
-  [0x52, 'Navegador: adelante', 'Navegador y sistema', 0x20, 0, 0],
-  [0x53, 'Navegador: atrás', 'Navegador y sistema', 0x21, 0, 0],
-  [0x54, 'Navegador: detener', 'Navegador y sistema', 0x22, 0, 0],
-  [0x55, 'Recargar página', 'Navegador y sistema', 0x24, 0, 0],
-  [0x56, 'Buscar', 'Navegador y sistema', 0x26, 0, 0],
-  [0x57, 'Correo', 'Navegador y sistema', 0x1e, 0, 0],
-  [0x58, 'Calculadora', 'Navegador y sistema', 0x1d, 0, 0],
-  [0x59, 'Este equipo', 'Navegador y sistema', 0x23, 0, 0],
-  [0x20, 'Cortar', 'Atajos', 0x11, 0x01, 0x1b],
-  [0x21, 'Copiar', 'Atajos', 0x11, 0x01, 0x06],
-  [0x22, 'Pegar', 'Atajos', 0x11, 0x01, 0x19],
-  [0x23, 'Abrir', 'Atajos', 0x11, 0x01, 0x12],
-  [0x24, 'Guardar', 'Atajos', 0x11, 0x01, 0x16],
-  [0x25, 'Buscar en página', 'Atajos', 0x11, 0x01, 0x09],
-  [0x27, 'Deshacer', 'Atajos', 0x11, 0x01, 0x1d],
-  [0x26, 'Rehacer', 'Atajos', 0x11, 0x01, 0x1c],
-  [0x28, 'Seleccionar todo', 'Atajos', 0x11, 0x01, 0x04],
-  [0x29, 'Imprimir', 'Atajos', 0x11, 0x01, 0x13],
-  [0x2a, 'Cerrar ventana', 'Atajos', 0x11, 0x04, 0x3d],
-  [0x2b, 'Cambiar de ventana', 'Atajos', 0x11, 0x04, 0x2b],
-  [0x2c, 'Mostrar escritorio', 'Atajos', 0x11, 0x08, 0x07],
-  [0x2d, 'Ejecutar', 'Atajos', 0x11, 0x08, 0x15],
-  [0x2e, 'Bloquear PC', 'Atajos', 0x11, 0x08, 0x0f],
-  [0x32, 'Captura de pantalla', 'Atajos', 0x11, 0x0a, 0x16],
-  [0x10, 'Combinación de teclas…', 'Personalizado', 0x11, 0, 0],
-  [0x11, 'Macro…', 'Personalizado', 0x12, 0, 0],
+  [0x00, 'Disabled', 'mouse', 0x01, 0, 0],
+  [0x01, 'Left click', 'mouse', 0x02, 0, 0],
+  [0x02, 'Right click', 'mouse', 0x03, 0, 0],
+  [0x03, 'Middle click', 'mouse', 0x04, 0, 0],
+  [0x04, 'Forward', 'mouse', 0x06, 0, 0],
+  [0x05, 'Back', 'mouse', 0x05, 0, 0],
+  [0x09, 'Double click', 'mouse', 0x07, 0, 0],
+  [0x0a, 'Rapid fire', 'mouse', 0x08, 0, 0],
+  [0x0b, 'Scroll up', 'mouse', 0x09, 0, 0],
+  [0x0c, 'Scroll down', 'mouse', 0x0a, 0, 0],
+  [0x0d, 'Scroll left', 'mouse', 0x0b, 0, 0],
+  [0x0e, 'Scroll right', 'mouse', 0x0c, 0, 0],
+  [0x16, 'Easy Aim', 'mouse', 0x10, 0x00, 0x03],
+  [0x06, 'DPI cycle', 'dpiLight', 0x0d, 0, 0],
+  [0x07, 'DPI +', 'dpiLight', 0x0e, 0, 0],
+  [0x08, 'DPI −', 'dpiLight', 0x0f, 0, 0],
+  [0x17, 'Lighting cycle', 'dpiLight', 0x29, 0x00, 0x03],
+  [0x34, 'Mode switch', 'dpiLight', 0x3c, 0, 0],
+  [0x40, 'Media player', 'media', 0x15, 0, 0],
+  [0x41, 'Play / pause', 'media', 0x18, 0, 0],
+  [0x42, 'Stop', 'media', 0x19, 0, 0],
+  [0x43, 'Previous track', 'media', 0x16, 0, 0],
+  [0x44, 'Next track', 'media', 0x17, 0, 0],
+  [0x45, 'Volume up', 'media', 0x1b, 0, 0],
+  [0x46, 'Volume down', 'media', 0x1c, 0, 0],
+  [0x47, 'Mute', 'media', 0x1a, 0, 0],
+  [0x50, 'Browser home', 'browser', 0x25, 0, 0],
+  [0x51, 'Favorites', 'browser', 0x11, 0x03, 0x12],
+  [0x52, 'Browser forward', 'browser', 0x20, 0, 0],
+  [0x53, 'Browser back', 'browser', 0x21, 0, 0],
+  [0x54, 'Browser stop', 'browser', 0x22, 0, 0],
+  [0x55, 'Refresh page', 'browser', 0x24, 0, 0],
+  [0x56, 'Search', 'browser', 0x26, 0, 0],
+  [0x57, 'Mail', 'browser', 0x1e, 0, 0],
+  [0x58, 'Calculator', 'browser', 0x1d, 0, 0],
+  [0x59, 'This PC', 'browser', 0x23, 0, 0],
+  [0x20, 'Cut', 'shortcuts', 0x11, 0x01, 0x1b],
+  [0x21, 'Copy', 'shortcuts', 0x11, 0x01, 0x06],
+  [0x22, 'Paste', 'shortcuts', 0x11, 0x01, 0x19],
+  [0x23, 'Open', 'shortcuts', 0x11, 0x01, 0x12],
+  [0x24, 'Save', 'shortcuts', 0x11, 0x01, 0x16],
+  [0x25, 'Find in page', 'shortcuts', 0x11, 0x01, 0x09],
+  [0x27, 'Undo', 'shortcuts', 0x11, 0x01, 0x1d],
+  [0x26, 'Redo', 'shortcuts', 0x11, 0x01, 0x1c],
+  [0x28, 'Select all', 'shortcuts', 0x11, 0x01, 0x04],
+  [0x29, 'Print', 'shortcuts', 0x11, 0x01, 0x13],
+  [0x2a, 'Close window', 'shortcuts', 0x11, 0x04, 0x3d],
+  [0x2b, 'Switch window', 'shortcuts', 0x11, 0x04, 0x2b],
+  [0x2c, 'Show desktop', 'shortcuts', 0x11, 0x08, 0x07],
+  [0x2d, 'Run', 'shortcuts', 0x11, 0x08, 0x15],
+  [0x2e, 'Lock PC', 'shortcuts', 0x11, 0x08, 0x0f],
+  [0x32, 'Screenshot', 'shortcuts', 0x11, 0x0a, 0x16],
+  [0x10, 'Key combination…', 'custom', 0x11, 0, 0],
+  [0x11, 'Macro…', 'custom', 0x12, 0, 0],
 ].map(([id, name, group, b0, b1, b2]) => ({ id, name, group, bytes: [b0, b1, b2] }));
 
 const FN = { OFF: 0x00, LEFT: 0x01, SHORTCUT: 0x10, MACRO: 0x11 };
@@ -234,17 +238,18 @@ function encodeReset() {
 /** Lista ordenada de reports a enviar para aplicar un perfil completo. */
 function encodeProfile(profile, { wireless = true } = {}) {
   const out = [
-    { label: 'DPI y sensor', data: encodeDpi(profile) },
-    { label: 'Iluminación y energía', data: encodeLight(profile) },
-    { label: 'Frecuencia de sondeo', data: encodePolling(profile) },
-    { label: 'Botones', data: encodeButtons(profile) },
+    // `label` va al registro; `key` (y `params`) permite a la interfaz nombrarlo en su idioma.
+    { key: 'dpi', label: 'DPI y sensor', data: encodeDpi(profile) },
+    { key: 'light', label: 'Iluminación y energía', data: encodeLight(profile) },
+    { key: 'polling', label: 'Frecuencia de sondeo', data: encodePolling(profile) },
+    { key: 'buttons', label: 'Botones', data: encodeButtons(profile) },
   ];
   profile.buttons.forEach((btn, k) => {
     if (btn.fn !== FN.MACRO) return;
     const macro = (profile.macros || []).find((m) => m.id === btn.macroId);
     if (!macro) return;
     chunkMacro(encodeMacro(k, macro), wireless).forEach((data, i) =>
-      out.push({ label: `Macro botón ${k + 1} (${i + 1}/3)`, data, macro: true }));
+      out.push({ key: 'macro', params: { button: k + 1, part: i + 1 }, label: `Macro botón ${k + 1} (${i + 1}/3)`, data, macro: true }));
   });
   return out;
 }
@@ -252,8 +257,11 @@ function encodeProfile(profile, { wireless = true } = {}) {
 /**
  * Report de entrada 0x03 (colección vendor 0x0A): [03, lo, hi, v0, v1].
  * Devuelve un evento o null.
+ *
+ * Estado (0x4010): V0 = 1 normal, 2 cargando, 3 en reposo. Con cable el ratón
+ * no entra en reposo y envía 3 con la batería al 100 %: ahí significa carga completa.
  */
-function parseInput(buf) {
+function parseInput(buf, { wired = false } = {}) {
   if (!buf || buf.length < 5 || buf[0] !== 0x03) return null;
   const code = buf[1] | (buf[2] << 8);
   const v0 = buf[3], v1 = buf[4];
@@ -262,7 +270,7 @@ function parseInput(buf) {
     case 0x2010: return { type: 'polling', index: v0 };
     case 0x4010: return {
       type: 'status',
-      state: v0 === 2 ? 'charging' : v0 === 3 ? 'sleeping' : 'online',
+      state: v0 === 2 ? 'charging' : v0 === 3 ? (wired ? 'charged' : 'sleeping') : 'online',
       battery: v1 >= 1 && v1 <= 10 ? v1 * 10 : null,
     };
     case 0x5010: return { type: 'ack', ok: v0 === 0, reportId: v1 }; // V1 repite el Report ID confirmado
@@ -271,16 +279,17 @@ function parseInput(buf) {
   }
 }
 
-/** Valida un perfil antes de enviarlo. Devuelve una lista de problemas legibles. */
+/**
+ * Valida un perfil antes de enviarlo. Devuelve códigos de problema
+ * (la interfaz los traduce): needLeftClick, needDpiStage, activeDpiDisabled.
+ */
 function validate(profile) {
   const problems = [];
-  if (!profile.buttons.some((b) => b.fn === FN.LEFT)) {
-    problems.push('Al menos un botón debe ser "Clic izquierdo", o no podrás hacer clic.');
-  }
+  if (!profile.buttons.some((b) => b.fn === FN.LEFT)) problems.push('needLeftClick');
   const enabled = profile.dpi.stages.filter((s) => s.enabled);
-  if (!enabled.length) problems.push('Activa al menos un nivel de DPI.');
+  if (!enabled.length) problems.push('needDpiStage');
   if (!profile.dpi.stages[profile.dpi.active] || !profile.dpi.stages[profile.dpi.active].enabled) {
-    problems.push('El nivel de DPI activo debe estar habilitado.');
+    problems.push('activeDpiDisabled');
   }
   return problems;
 }

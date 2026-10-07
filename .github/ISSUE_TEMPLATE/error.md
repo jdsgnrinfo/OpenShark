@@ -1,17 +1,17 @@
 ---
-name: Algo no funciona
-about: Informa de un fallo
+name: Something doesn't work
+about: Report a bug (English or Spanish welcome)
 labels: error
 ---
 
-**Versión de Open Shark:** (está en el nombre del .zip descargado)
+**Open Shark version:** (it's in the name of the downloaded .zip, or at the bottom of Settings)
 
-**Ratón y conexión:**
+**Mouse and connection:**
 
-**Qué hiciste:**
+**What you did:**
 
-**Qué esperabas que pasara:**
+**What you expected to happen:**
 
-**Qué pasó:** (añade capturas si ayudan)
+**What happened:** (add screenshots if they help)
 
-**Registro de diagnóstico:** adjunta `open-shark.log` (Configuración → Diagnóstico → Abrir carpeta).
+**Diagnostic log:** attach `open-shark.log` (Settings → Diagnostics → Open folder).

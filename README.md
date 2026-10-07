@@ -1,63 +1,105 @@
+<br>
+<br>
 <h1 align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/logo/open-shark-blanco.png">
     <img src="docs/logo/open-shark-negro.png" alt="Open Shark" width="420">
   </picture>
+  <br>
   <br><br>
 </h1>
 
-<br>
+<p align="center"><b>English</b> · <a href="README.es.md">Español</a></p>
 
-Configurador abierto para ratones **Attack Shark**: una interfaz más clara que la
-oficial y pensada para quien tiene varios ratones de la marca. Cada ratón
-conectado muestra su conexión y su batería, y guarda su propia configuración.
+An open configurator for **Attack Shark** mice: a clearer interface than the
+official one, built for people who own more than one mouse from the brand.
+Each connected mouse shows its connection and battery, and keeps its own
+settings.
 
-![Open Shark: sensibilidad](docs/capturas/sensibilidad.png)
+![Open Shark: sensitivity](docs/capturas/sensibilidad.png)
 
-> **Probado solo con el Attack Shark X6** (receptor 2.4 GHz y cable).
-> Otros modelos de la marca pueden funcionar, total o parcialmente, si usan el
-> mismo protocolo. Si tienes otro, pruébalo y cuéntame qué funciona y qué no:
-> mira [Probar con otro modelo](#probar-con-otro-modelo).
+> **Only tested with the Attack Shark X6** (2.4 GHz receiver and cable).
+> Other models from the brand may work, fully or partly, if they use the same
+> protocol. If you have another one, try it and tell me what works and what
+> doesn't: see [Testing another model](#testing-another-model).
 
-El protocolo se obtuvo por ingeniería inversa del software oficial; está
-documentado en [docs/PROTOCOL.md](docs/PROTOCOL.md).
+The protocol was reverse-engineered from the official software; it is
+documented (in Spanish) in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 
-| Asignaciones | Iluminación | Configuración |
+| Button mapping | Lighting | Settings |
 |---|---|---|
-| ![Asignaciones de botones](docs/capturas/botones.png) | ![Iluminación](docs/capturas/iluminacion.png) | ![Configuración del programa](docs/capturas/configuracion.png) |
+| ![Button mapping](docs/capturas/botones.png) | ![Lighting](docs/capturas/iluminacion.png) | ![Program settings](docs/capturas/configuracion.png) |
 
-## Qué puedes configurar
+## What you can configure
 
-- **Rendimiento**: hasta 8 niveles de DPI (50–26 000) con su color, frecuencia de
-  sondeo (125–1000 Hz), distancia de levantamiento, Motion Sync, corrección de
-  ondulación, ajuste de ángulo y antirrebote.
-- **Botones**: cualquier función de ratón, DPI, multimedia, navegador, atajos
-  predefinidos, combinaciones de teclas propias o macros.
-- **Iluminación**: 12 efectos, color, brillo y velocidad.
-- **Energía**: apagado de luces y reposo profundo.
-- **Macros**: grabación desde el teclado con las esperas reales.
+- **Sensitivity**: up to 8 DPI levels (50–26,000) with their colors, polling
+  rate (125–1000 Hz), lift-off distance, Motion Sync, ripple control, angle
+  snapping and debounce.
+- **Buttons**: any mouse function, DPI, media, browser, built-in shortcuts,
+  your own key combinations or macros.
+- **Lighting**: 12 effects, color, brightness and speed.
+- **Power**: light-off timer and deep sleep.
+- **Macros**: recorded from the keyboard with the real delays.
+- **Battery**: level and charging state in the top bar (charging or fully
+  charged), animated while charging over the cable.
 
-La primera vez que conectas un ratón, Open Shark importa los perfiles del
-software original si está instalado.
+The first time you connect a mouse, Open Shark imports the profiles from the
+original software if it is installed.
 
-## Descarga (versión portable)
+## Download (portable version)
 
-1. Descarga `OpenShark-<versión>-portable-win-x64.zip` desde la sección
-   **Releases** del repositorio.
-2. Descomprímelo en una carpeta fija, por ejemplo `C:\Programas\Open Shark`.
-3. Abre `Open Shark.exe`.
+1. Download `OpenShark-<version>-portable-win-x64.zip` from the repository's
+   **Releases** section.
+2. Extract it to a permanent folder, for example `C:\Programs\Open Shark`.
+3. Open `Open Shark.exe`.
 
-No necesita instalación. Para actualizar, reemplaza la carpeta por la de la
-nueva versión; tus perfiles se guardan aparte, en `%APPDATA%\Open Shark`.
+No installation needed. To update, replace the folder with the new version;
+your profiles are stored separately in `%APPDATA%\Open Shark`.
 
-Como el ejecutable no está firmado, Windows puede mostrar "Windows protegió su
-PC": pulsa **Más información → Ejecutar de todas formas**.
+Because the executable isn't signed, Windows may show "Windows protected your
+PC": click **More info → Run anyway**.
 
-Si activas "Iniciar con Windows" y luego mueves la carpeta, vuelve a activarlo.
+If you turn on "Start with Windows" and later move the folder, turn it on again.
 
-## Desarrollo
+## Usage
 
-Requisitos: Windows 10/11 y Node.js 20 o superior.
+When you close the window, Open Shark keeps running in the system tray (next to
+the clock). Click the icon to open it; right-click for "Start with Windows" or
+"Quit".
+
+The gear at the bottom left opens the program settings:
+
+- **Appearance**: light, dark or match Windows.
+- **Language**: English or Spanish. On first launch it follows Windows (Spanish
+  if Windows is in Spanish, English otherwise).
+- **When closing the window**: keep in the tray and start with Windows.
+- **Diagnostics**: opens the log folder.
+
+The **Apply** and **Discard** buttons only appear when there are changes not
+yet sent to the mouse.
+
+## Testing another model
+
+Open Shark keeps a diagnostic log of what it detects and what it sends: the
+connected mice and receivers (VID/PID and HID collections), every setting
+applied with its result (`OK`, `sin ACK`, `FALLÓ`), battery changes and errors.
+
+1. Connect your mouse and open Open Shark. Even if it doesn't show up, the log
+   will have recorded its VID/PID.
+2. If it shows up, try each section and click **Apply**. Note what actually
+   changes on the mouse (DPI, lighting, buttons…).
+3. Click the gear at the bottom left, then **Diagnostics → Open folder**, and
+   copy `open-shark.log`.
+4. Open an [issue](../../issues/new/choose) with the "Support for another
+   mouse" template, attach the log and describe what worked and what didn't.
+
+The log contains no personal data or serial numbers. It lives in
+`%APPDATA%\Open Shark\logs`. Its messages are in Spanish; the data in it (IDs,
+bytes, results) is what matters.
+
+## Development
+
+Requirements: Windows 10/11 and Node.js 20 or later.
 
 ```bash
 npm install
@@ -67,24 +109,17 @@ npm install
 npm start
 ```
 
-También puedes hacer doble clic en `Abrir Open Shark.cmd`.
+You can also double-click `Abrir Open Shark.cmd`.
 
-Al cerrar la ventana, Open Shark sigue activo en la bandeja del sistema (junto
-al reloj). Clic en el icono para abrirlo; clic derecho para "Iniciar con
-Windows" o "Salir".
-
-El engranaje abajo a la izquierda abre la configuración del programa: tema claro,
-oscuro o como Windows, mantener en la bandeja al cerrar e iniciar con Windows.
-
-Si tras `npm install` falta `node_modules\electron\dist\electron.exe` (con
-Node 24 el descompresor de Electron puede terminar sin hacer nada), extráelo a
-mano desde la caché que ya descargó npm:
+If `node_modules\electron\dist\electron.exe` is missing after `npm install`
+(with Node 24 the Electron extractor may finish without doing anything),
+extract it by hand from the cache npm already downloaded:
 
 ```powershell
 $z = (Get-ChildItem "$env:LOCALAPPDATA\electron\Cache" -Recurse -Filter "electron-v*-win32-x64.zip" | Sort-Object LastWriteTime | Select-Object -Last 1).FullName; Expand-Archive $z node_modules\electron\dist -Force; Set-Content node_modules\electron\path.txt "electron.exe" -NoNewline
 ```
 
-Otros comandos:
+Other commands:
 
 ```bash
 npm test
@@ -98,62 +133,54 @@ npm run probe
 npm run dist
 ```
 
-`dist` genera el .zip portable en `dist/`. Antes de publicar una versión, sube
-el número en `version` de `package.json`.
+`dist` builds the portable .zip in `dist/`. Before publishing a release, bump
+`version` in `package.json`.
 
-`probe` lista los ratones detectados y muestra sus eventos (batería, nivel DPI)
-durante 5 segundos. `npm run probe -- polling 3` envía solo la frecuencia de
-sondeo, útil para comprobar que la comunicación funciona.
+`probe` lists the detected mice and prints their events (battery, DPI level)
+for 5 seconds. `npm run probe -- polling 3` sends only the polling rate, which
+is handy to check that communication works.
 
-Puedes dejar abierto el software original: ambos pueden convivir, pero el último
-que aplique cambios es el que manda.
+You can keep the official software open: both can coexist, but whichever
+applies changes last wins.
 
-## Estructura
+### Translations
+
+All interface texts live in `src/renderer/i18n.js` (English and Spanish); the
+tray menu texts are in `src/main/main.js`. To add a language, copy the `en`
+block, translate it and add it to `DICTS` and `LANGUAGES`. Missing keys fall
+back to English.
+
+## Project structure
 
 ```
-src/core/protocol/x6.js   Codificación de paquetes (funciones puras, con tests)
-src/core/models.js        Modelos soportados: VID/PID, colecciones y botones físicos
-src/core/device-manager.js Detección de varios ratones, eventos y envío con ACK
-src/core/oem-import.js    Lectura del pro.data del software oficial
-src/core/store.js         Perfiles por ratón (userData/open-shark.json)
-src/main/                 Proceso principal de Electron y puente IPC
-src/renderer/             Interfaz
-tools/probe.js            Diagnóstico por consola
+src/core/protocol/x6.js    Packet encoding (pure functions, with tests)
+src/core/models.js         Supported models: VID/PID, collections and physical buttons
+src/core/device-manager.js Multi-mouse detection, events and sending with ACK
+src/core/oem-import.js     Reads pro.data from the official software
+src/core/store.js          Per-mouse profiles and preferences (userData/open-shark.json)
+src/core/logger.js         Diagnostic log
+src/main/                  Electron main process and IPC bridge
+src/renderer/              Interface (i18n.js: English and Spanish texts)
+tools/probe.js             Command-line diagnostics
 ```
 
-## Probar con otro modelo
+## Adding another Attack Shark mouse
 
-Open Shark guarda un registro de diagnóstico con lo que detecta y lo que envía:
-los ratones y receptores conectados (VID/PID y colecciones HID), cada ajuste que
-se aplica con su resultado (`OK`, `sin ACK`, `FALLÓ`) y los errores.
+1. Connect it and run `npm run probe` (or look up its VID/PID in Device
+   Manager).
+2. If its official software is from the same family (same `Mouse.exe`,
+   `hiddriver_1.dll` layout), it most likely speaks the same protocol: add its
+   PIDs to `src/core/models.js` and define its physical buttons (with an `id`
+   and its names in `src/renderer/i18n.js`, keys `btn.<id>`).
+3. Otherwise, create `src/core/protocol/<model>.js` with the same interface as
+   `x6.js`.
 
-1. Conecta tu ratón y abre Open Shark. Si no aparece, el registro ya habrá
-   anotado su VID/PID igualmente.
-2. Si aparece, prueba cada sección y pulsa **Aplicar**. Fíjate en qué cambia de
-   verdad en el ratón (DPI, luz, botones…).
-3. En el engranaje de abajo a la izquierda, pulsa **Diagnóstico → Abrir
-   carpeta** y copia `open-shark.log`.
-4. Abre un [*issue*](../../issues/new/choose) con la plantilla "Soporte para
-   otro ratón", adjunta el registro y cuenta qué funcionó y qué no.
+## Known limitations
 
-El registro no guarda datos personales ni números de serie. Está en
-`%APPDATA%\Open Shark\logs`.
-
-## Añadir otro ratón Attack Shark
-
-Para añadirlo tú mismo:
-
-1. Conéctalo y ejecuta `npm run probe` (o mira el VID/PID en el Administrador de
-   dispositivos).
-2. Si su software oficial es de la misma familia (misma estructura de
-   `Mouse.exe`, `hiddriver_1.dll`), lo normal es que hable el mismo protocolo:
-   añade sus PID a `src/core/models.js` y define sus botones físicos.
-3. Si no, crea `src/core/protocol/<modelo>.js` con la misma interfaz que `x6.js`.
-
-## Notas conocidas
-
-- El firmware no permite leer la configuración del ratón: lo que ves es lo que
-  Open Shark guardó o importó.
-- El byte de LOD del paquete DPI difiere de la app original (ver
-  docs/PROTOCOL.md). Si el LOD no cambia nada, pon `LOD_AT_BYTE3 = false`.
-- Las macros solo graban teclado (no clics de ratón).
+- The firmware doesn't allow reading the mouse's settings: what you see is what
+  Open Shark saved or imported.
+- Battery is reported in 10 % steps. Charging is only visible with the cable
+  plugged in, because the mouse then stops using the receiver.
+- The LOD byte of the DPI packet differs from the original app (see
+  docs/PROTOCOL.md). If LOD changes nothing, set `LOD_AT_BYTE3 = false`.
+- Macros only record the keyboard (not mouse clicks).

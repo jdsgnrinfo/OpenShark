@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 // KeyboardEvent.code → código de uso HID (tabla 0x07 del estándar USB HID).
 const CODES = {
   Enter: 0x28, Escape: 0x29, Backspace: 0x2a, Tab: 0x2b, Space: 0x2c, Minus: 0x2d, Equal: 0x2e,
@@ -18,24 +20,30 @@ for (let i = 13; i <= 24; i++) CODES['F' + i] = 0x68 + (i - 13);
 for (let i = 1; i <= 9; i++) CODES['Numpad' + i] = 0x58 + i;
 CODES.Numpad0 = 0x62;
 
+// Nombres visibles de las teclas especiales (clave de traducción); el resto se deriva del código.
 const PRETTY = {
-  ControlLeft: 'Ctrl', ControlRight: 'Ctrl der.', ShiftLeft: 'Mayús', ShiftRight: 'Mayús der.',
-  AltLeft: 'Alt', AltRight: 'AltGr', MetaLeft: 'Win', MetaRight: 'Win der.', Space: 'Espacio',
-  Escape: 'Esc', Backspace: 'Retroceso', Enter: 'Intro', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→',
-  Delete: 'Supr', Insert: 'Insert', PageUp: 'Re Pág', PageDown: 'Av Pág', CapsLock: 'Bloq Mayús',
+  ControlLeft: 'key.ctrl', ControlRight: 'key.ctrlRight', ShiftLeft: 'key.shift', ShiftRight: 'key.shiftRight',
+  AltLeft: 'key.alt', AltRight: 'key.altGr', MetaLeft: 'key.win', MetaRight: 'key.winRight', Space: 'key.space',
+  Escape: 'key.esc', Backspace: 'key.backspace', Enter: 'key.enter', Delete: 'key.delete', Insert: 'key.insert',
+  PageUp: 'key.pageUp', PageDown: 'key.pageDown', CapsLock: 'key.capsLock',
 };
+const ARROWS = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
 
-const NAMES = {};
-for (const [code, hid] of Object.entries(CODES)) {
-  if (NAMES[hid]) continue;
-  NAMES[hid] = PRETTY[code] || code.replace(/^Key|^Digit/, '').replace(/^Numpad/, 'Num ');
+const CODE_BY_HID = {};
+for (const [code, hid] of Object.entries(CODES)) CODE_BY_HID[hid] ??= code;
+
+function nameOf(code) {
+  if (PRETTY[code]) return t(PRETTY[code]);
+  if (ARROWS[code]) return ARROWS[code];
+  if (code.startsWith('Numpad')) return t('key.num', { k: code.slice(6) });
+  return code.replace(/^Key|^Digit/, '');
 }
 
 export const MOD = { CTRL: 0x01, SHIFT: 0x02, ALT: 0x04, WIN: 0x08 };
 const MODIFIER_CODES = new Set(['ControlLeft', 'ControlRight', 'ShiftLeft', 'ShiftRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight']);
 
 export const hidFromCode = (code) => CODES[code] ?? null;
-export const keyName = (hid) => NAMES[hid] || `0x${hid.toString(16)}`;
+export const keyName = (hid) => (CODE_BY_HID[hid] ? nameOf(CODE_BY_HID[hid]) : `0x${hid.toString(16)}`);
 export const isModifierCode = (code) => MODIFIER_CODES.has(code);
 
 export function modsFromEvent(e) {
@@ -44,10 +52,10 @@ export function modsFromEvent(e) {
 
 export function comboName(mod, key) {
   const parts = [];
-  if (mod & MOD.CTRL) parts.push('Ctrl');
-  if (mod & MOD.SHIFT) parts.push('Mayús');
-  if (mod & MOD.ALT) parts.push('Alt');
-  if (mod & MOD.WIN) parts.push('Win');
+  if (mod & MOD.CTRL) parts.push(t('key.ctrl'));
+  if (mod & MOD.SHIFT) parts.push(t('key.shift'));
+  if (mod & MOD.ALT) parts.push(t('key.alt'));
+  if (mod & MOD.WIN) parts.push(t('key.win'));
   if (key) parts.push(keyName(key));
   return parts.join(' + ');
 }

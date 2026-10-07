@@ -1,28 +1,28 @@
 ---
-name: Soporte para otro ratón
-about: Pide que Open Shark funcione con otro modelo de Attack Shark
-title: "Soporte para Attack Shark <modelo>"
+name: Support for another mouse
+about: Ask for Open Shark to work with another Attack Shark model (English or Spanish welcome)
+title: "Support for Attack Shark <model>"
 labels: nuevo-modelo
 ---
 
-**Modelo:** (por ejemplo, Attack Shark R1)
+**Model:** (for example, Attack Shark R1)
 
-**Conexión:** cable / receptor 2.4 GHz / Bluetooth
+**Connection:** cable / 2.4 GHz receiver / Bluetooth
 
-**Registro de diagnóstico:** adjunta `open-shark.log` (Configuración → Diagnóstico → Abrir carpeta).
+**Diagnostic log:** attach `open-shark.log` (Settings → Diagnostics → Open folder).
 
-**¿Aparece el ratón en Open Shark?** sí / no
+**Does the mouse show up in Open Shark?** yes / no
 
-**Qué funciona y qué no** (marca lo que probaste):
+**What works and what doesn't** (tick what you tested):
 
-- [ ] DPI y sus colores
-- [ ] Frecuencia de sondeo
-- [ ] Botones
-- [ ] Iluminación
-- [ ] Energía (reposo)
+- [ ] DPI and its colors
+- [ ] Polling rate
+- [ ] Buttons
+- [ ] Lighting
+- [ ] Power (sleep)
 - [ ] Macros
-- [ ] Batería y nivel de DPI en la parte superior
+- [ ] Battery and DPI level in the top bar
 
-Detalles:
+Details:
 
-**Software oficial que usa:** nombre y versión, y si su carpeta contiene `Mouse.exe` y `hiddriver_1.dll`.
+**Official software it uses:** name and version, and whether its folder contains `Mouse.exe` and `hiddriver_1.dll`.

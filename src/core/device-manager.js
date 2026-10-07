@@ -7,6 +7,11 @@ const { Logger, hex4 } = require('./logger');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const UNKNOWN_INPUTS_LOGGED = 20; // reports sin interpretar que se guardan por ratón
 
+/** Error con un código que la interfaz traduce (el mensaje es solo para el registro). */
+function fail(code, message, problems) {
+  return Object.assign(new Error(message), { code, problems });
+}
+
 /**
  * ¿Merece la pena registrar este dispositivo HID? Los de marcas conocidas, los
  * que se llaman "Shark"/"Attack" y cualquier ratón: así un modelo aún no
@@ -124,16 +129,21 @@ class DeviceManager extends EventEmitter {
 
   /** Registra los dispositivos HID candidatos, solo cuando la lista cambia. */
   _logHid(all, vendorIds) {
-    const rows = all.filter((i) => isCandidate(i, vendorIds)).map((i) => ({
+    // El nombre se compara aparte: algunos receptores lo devuelven cortado ("U", "USB G"…)
+    // en cada lectura, y eso no es un cambio de dispositivos.
+    const ids = (i) => ({
       vid: hex4(i.vendorId), pid: hex4(i.productId),
-      producto: i.product || '', fabricante: i.manufacturer || '',
       usagePage: hex4(i.usagePage), usage: hex4(i.usage), interfaz: i.interface,
+    });
+    const candidates = all.filter((i) => isCandidate(i, vendorIds));
+    const signature = [...new Set(candidates.map((i) => JSON.stringify(ids(i))))].sort().join('\n');
+    if (signature === this.lastHidSignature) return;
+    this.lastHidSignature = signature;
+    const rows = candidates.map((i) => ({
+      ...ids(i), producto: i.product || '', fabricante: i.manufacturer || '',
       soportado: !!findModel(i.vendorId, i.productId),
     }));
     const lines = [...new Set(rows.map((r) => JSON.stringify(r)))].sort();
-    const signature = lines.join('\n');
-    if (signature === this.lastHidSignature) return;
-    this.lastHidSignature = signature;
     this.log.info('hid', `Dispositivos HID relevantes (${lines.length}):`);
     for (const l of lines) this.log.info('hid', '  ' + l);
   }
@@ -164,7 +174,7 @@ class DeviceManager extends EventEmitter {
   }
 
   _onInput(d, buf) {
-    const ev = d.model.protocol.parseInput(Buffer.from(buf));
+    const ev = d.model.protocol.parseInput(Buffer.from(buf), { wired: d.connection === 'wired' });
     if (!ev) {
       // Reports que el protocolo no entiende: pistas para dar soporte a funciones o modelos nuevos.
       if (d.unknownInputs++ < UNKNOWN_INPUTS_LOGGED) this.log.info('input', `Report sin interpretar de ${d.model.name}`, Buffer.from(buf).toString('hex'));
@@ -172,7 +182,9 @@ class DeviceManager extends EventEmitter {
     }
     this.emit('input', d.key, ev);
     if (ev.type === 'status') {
-      if (ev.state !== d.status.state) this.log.info('device', `${d.model.name}: estado ${d.status.state} → ${ev.state}`, { bateria: ev.battery });
+      if (ev.state !== d.status.state || ev.battery !== d.status.battery) {
+        this.log.info('battery', `${d.model.name}: ${ev.state}, ${ev.battery ?? '?'} %`, Buffer.from(buf).toString('hex'));
+      }
       Object.assign(d.status, { state: ev.state, battery: ev.battery ?? d.status.battery });
     } else if (ev.type === 'dpiStage') d.status.dpiStage = ev.stage;
     else return;
@@ -220,10 +232,10 @@ class DeviceManager extends EventEmitter {
    */
   async apply(key, profile, { onProgress } = {}) {
     const d = this.devices.get(key);
-    if (!d) throw new Error('El ratón ya no está conectado.');
+    if (!d) throw fail('notConnected', 'El ratón ya no está conectado.');
     const proto = d.model.protocol;
     const problems = proto.validate(profile);
-    if (problems.length) throw new Error(problems.join(' '));
+    if (problems.length) throw fail('invalidProfile', `Perfil no válido: ${problems.join(', ')}`, problems);
 
     const wireless = d.connection === 'wireless';
     const packets = proto.encodeProfile(profile, { wireless });
@@ -232,8 +244,8 @@ class DeviceManager extends EventEmitter {
 
   async reset(key) {
     const d = this.devices.get(key);
-    if (!d) throw new Error('El ratón ya no está conectado.');
-    return this._sendAll(d, [{ label: 'Restaurar fábrica', data: d.model.protocol.encodeReset() }]);
+    if (!d) throw fail('notConnected', 'El ratón ya no está conectado.');
+    return this._sendAll(d, [{ key: 'reset', label: 'Restaurar fábrica', data: d.model.protocol.encodeReset() }]);
   }
 
   async _sendAll(d, packets, onProgress) {
@@ -244,7 +256,7 @@ class DeviceManager extends EventEmitter {
       dev = new HID.HID(d.configPath);
     } catch (e) {
       this.log.error('send', 'No se pudo abrir la colección de configuración', e.message);
-      throw new Error('No se pudo abrir el ratón. Cierra el software oficial si está aplicando cambios y vuelve a intentarlo.');
+      throw fail('openFailed', 'No se pudo abrir el ratón.');
     }
     const acks = wireless && d.eventPath ? this._openAckChannel(d) : null;
     if (wireless && !acks?.available) this.log.warn('send', 'Sin canal de ACK: no se podrá confirmar cada paquete');
@@ -266,7 +278,7 @@ class DeviceManager extends EventEmitter {
           if (process.env.OPEN_SHARK_DEBUG) console.log(`[send] ${p.label} intento ${attempt + 1}: ok=${ok} ack=${acked} (${Date.now() - t0} ms)`);
           if (!acks) await sleep(p.macro ? 200 : 40);
         }
-        results.push({ label: p.label, ok, acked });
+        results.push({ key: p.key, params: p.params, label: p.label, ok, acked });
         const unconfirmed = acked === null && ok && !acks?.available;
         const verdict = acked ? 'OK' : acked === false && acks ? 'rechazado por el ratón'
           : acked === null && ok ? (unconfirmed ? 'enviado, sin confirmación' : 'sin ACK tras 4 intentos') : 'FALLÓ';

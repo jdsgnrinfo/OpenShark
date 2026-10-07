@@ -1,12 +1,12 @@
 import { hidFromCode, keyName, isModifierCode, modsFromEvent, comboName } from './keymap.js';
 import { mouseArt, mouseStage, CANVAS } from './mouse-art.js';
 import { enhanceAll } from './dropdown.js';
+import { t, setLang, getLang, fmt, translateDom, LANGUAGES } from './i18n.js';
 
 const api = window.shark;
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const fmt = (n) => Number(n).toLocaleString('es-ES');
 
 const S = {
   catalog: null,
@@ -35,13 +35,7 @@ const ICONS = {
   // Engranaje (trazado de Lucide, licencia ISC)
   gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/>',
 };
-const SECTIONS = [
-  ['perf', 'Sensibilidad', 'Ajusta la velocidad del cursor y el sensor'],
-  ['buttons', 'Asignaciones', 'Pulsa un punto sobre el ratón para reasignarlo'],
-  ['light', 'Iluminación', 'Efecto y color de la luz del ratón'],
-  ['power', 'Energía', 'Ahorro de batería y reposo'],
-  ['macros', 'Macros', 'Secuencias de teclas para tus botones'],
-];
+const SECTIONS = ['perf', 'buttons', 'light', 'power', 'macros']; // títulos en i18n: sec.<clave>
 const icon = (k, s = 22) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`;
 
 /* ——— Persistencia ——— */
@@ -53,10 +47,10 @@ function persist() {
 }
 function setDirty(v) {
   S.dirty = v;
-  const t = $('#dirty-text');
-  t.textContent = v ? 'Hay cambios sin aplicar en el ratón.' : 'Todo está aplicado en el ratón.';
-  t.classList.toggle('dirty', v);
-  $('#discard').disabled = !v;
+  // Aplicar / Descartar solo se muestran mientras haya cambios pendientes.
+  const foot = $('#drawer-foot');
+  foot.classList.toggle('collapsed', !v);
+  foot.inert = !v;
 }
 function changed() { setDirty(true); persist(); renderStageFoot(); }
 const snapshot = () => { S.applied = structuredClone(prof()); };
@@ -71,7 +65,7 @@ function toast(msg, error = false) {
   toastTimer = setTimeout(() => { t.className = 'toast'; }, error ? 6000 : 3000);
 }
 
-function ask({ title, text = '', input = null, ok = 'Aceptar' }) {
+function ask({ title, text = '', input = null, ok = t('dialog.ok') }) {
   const dlg = $('#dialog');
   $('#dialog-title').textContent = title;
   $('#dialog-text').textContent = text;
@@ -114,7 +108,8 @@ const setFill = (range) => {
 const group = (title, body, first = false) => `<div class="group"${first ? ' style="margin-top:12px"' : ''}><h3>${esc(title)}</h3>${body}</div>`;
 
 /* ——— Selector de ratones ——— */
-const STATE_TEXT = { online: 'Conectado', charging: 'Cargando', sleeping: 'En reposo' };
+/** Nombre de un botón físico del ratón en el idioma actual. */
+const btnName = (b) => t(`btn.${b.id}`);
 
 function renderDeviceSwitch() {
   const nav = $('#device-switch');
@@ -122,8 +117,9 @@ function renderDeviceSwitch() {
   nav.innerHTML = S.devices.map((d) => {
     const nick = (d.key === S.key && S.entry) ? S.entry.nickname : (d.nickname || d.modelName);
     const b = d.status?.battery;
+    const bolt = ['charging', 'charged'].includes(d.status?.state) ? '⚡' : '';
     return `<button class="device-chip" data-key="${esc(d.key)}" aria-current="${d.key === S.key}">
-      <span>${esc(nick)}</span>${b != null ? `<span class="mini-batt">${b}%</span>` : ''}</button>`;
+      <span>${esc(nick)}</span>${b != null ? `<span class="mini-batt">${bolt}${b}%</span>` : ''}</button>`;
   }).join('');
   $$('.device-chip', nav).forEach((b) => b.addEventListener('click', () => selectDevice(b.dataset.key)));
 }
@@ -144,7 +140,7 @@ async function selectDevice(key) {
   setDirty(false);
   renderAll();
   if (S.entry.importedFromOem) {
-    toast('Importé tus perfiles del software original de Attack Shark.');
+    toast(t('toast.imported'));
     S.entry.importedFromOem = false;
     api.saveDevice(key, { importedFromOem: false });
   }
@@ -164,16 +160,32 @@ function renderTop() {
   $('#nickname').value = S.entry.nickname;
   const d = device();
   const st = d?.status || {};
-  $('#status-text').textContent = STATE_TEXT[st.state] || 'Conectado';
-  $('#status-dot').className = 'dot' + (st.state === 'sleeping' ? ' sleeping' : '');
+  $('#status-text').textContent = t(`status.${st.state || 'online'}`);
+  $('#status-dot').className = 'dot' + (st.state === 'sleeping' ? ' sleeping' : st.state === 'charging' ? ' charging' : '');
   $('#status-dot').title = $('#status-text').textContent;
-  const batt = st.battery;
-  const battChip = batt != null
-    ? `<span class="batt${batt <= 20 ? ' low' : ''}"><i style="width:calc((100% - 3px) * ${batt / 100})"></i></span>${batt}%${st.state === 'charging' ? ' · cargando' : ''}`
-    : `<span class="batt"></span>${st.state === 'charging' ? 'Cargando' : '—'}`;
   $('#top-chips').innerHTML = `
-    <span class="chip">${d?.connection === 'wireless' ? `${WIFI}2.4 GHz` : `${USB}Cable USB`}</span>
-    <span class="chip" title="Batería">${battChip}</span>`;
+    <span class="chip">${d?.connection === 'wireless' ? `${WIFI}2.4 GHz` : `${USB}${t('conn.cable')}`}</span>
+    ${batteryChip(st)}`;
+}
+
+/**
+ * Pila de la barra superior. Al cargar, el relleno sube desde el nivel actual
+ * hasta lleno en bucle y aparece un rayo; con la carga completa, el rayo queda fijo.
+ * El firmware informa la batería en decenas (10–100 %).
+ */
+const BOLT = '<svg class="bolt" viewBox="0 0 6 9" aria-hidden="true"><path d="M3.9 0 0.4 5h2.2L2 9l3.6-5.2H3.4z"/></svg>';
+function batteryChip(st) {
+  const batt = st.battery;
+  const charging = st.state === 'charging' || st.state === 'charged';
+  const full = st.state === 'charged' || (charging && batt === 100);
+  const tone = charging || batt == null ? '' : batt <= 10 ? 'low' : batt <= 30 ? 'mid' : '';
+  const cls = ['batt', tone, charging ? 'charging' : '', full ? 'full' : ''].filter(Boolean).join(' ');
+  const level = batt != null ? batt / 100 : 0;
+  const label = batt != null ? `${batt}%` : '—';
+  const note = full ? t('batt.full') : charging ? t('batt.charging') : '';
+  const title = t('batt.title', { level: label }) + (note ? ` · ${note}` : '');
+  return `<span class="chip${charging ? ' is-charging' : ''}" title="${title}" aria-label="${title}">
+    <span class="${cls}" style="--lvl:${level}"><span class="cell"><i></i></span>${charging ? BOLT : ''}</span>${label}${note ? `<span class="batt-note">· ${note}</span>` : ''}</span>`;
 }
 
 /* ——— Escenario central ——— */
@@ -192,16 +204,15 @@ const glowSecs = () => (10 - prof().light.speed) * 0.45;
 function fnLabel(b) {
   if (b.fn === S.catalog.fn.SHORTCUT && b.key) return comboName(b.mod, b.key);
   if (b.fn === S.catalog.fn.MACRO) return prof().macros.find((m) => m.id === b.macroId)?.name || 'Macro';
-  return (S.catalog.buttonFunctions.find((f) => f.id === b.fn) || { name: '—' }).name;
+  return S.catalog.buttonFunctions.some((f) => f.id === b.fn) ? t(`fn.${b.fn}`) : '—';
 }
 
 function renderStage() {
-  const [, title, sub] = SECTIONS.find(([k]) => k === S.tab);
-  $('#sec-title').textContent = title;
-  $('#sec-sub').textContent = sub;
+  $('#sec-title').textContent = t(`sec.${S.tab}`);
+  $('#sec-sub').textContent = t(`sec.${S.tab}.sub`);
   const withCallouts = S.tab === 'buttons';
   $('#stage-fit').innerHTML = mouseStage({
-    buttons: withCallouts ? device().buttons.map((b) => ({ slot: b.slot, name: b.name, fn: fnLabel(prof().buttons[b.slot]) })) : null,
+    buttons: withCallouts ? device().buttons.map((b) => ({ slot: b.slot, name: btnName(b), fn: fnLabel(prof().buttons[b.slot]) })) : null,
     selected: S.slot,
   });
   $('#canvas').classList.toggle('dim', withCallouts);
@@ -228,8 +239,8 @@ function renderStageFoot() {
   const foot = $('#stage-foot');
   if (!foot || !S.entry) return;
   const p = prof();
-  foot.innerHTML = `<span class="chip">Sensibilidad <b>${fmt(activeStage()?.dpi || 0)} DPI</b></span>
-    <span class="chip">Sondeo <b>${S.catalog.pollingRates[p.pollingIndex]} Hz</b></span>`;
+  foot.innerHTML = `<span class="chip">${t('stage.sens')} <b>${fmt(activeStage()?.dpi || 0)} DPI</b></span>
+    <span class="chip">${t('stage.polling')} <b>${S.catalog.pollingRates[p.pollingIndex]} Hz</b></span>`;
 }
 
 /* ——— Sensibilidad ——— */
@@ -244,16 +255,16 @@ const dpiFromPos = (pos) => {
 function renderPerf(panel) {
   const p = prof();
   panel.innerHTML = `
-    <div class="big-dpi"><b id="dpi-big"></b><span>DPI · nivel <span id="dpi-lvl"></span></span></div>
+    <div class="big-dpi"><b id="dpi-big"></b><span>${t('perf.dpiLevel')} <span id="dpi-lvl"></span></span></div>
     <div class="dpi-board" id="dpi-board"></div>
-    ${group('Frecuencia de sondeo', `${pills('polling', S.catalog.pollingRates.map((r, i) => [i, r]), p.pollingIndex)}
-      <p class="hint">Cuántas veces por segundo informa el ratón al PC. Las altas gastan más batería.</p>`)}
-    ${group('Distancia de levantamiento', pills('lod', [[0, 'Baja · 1 mm'], [1, 'Alta · 2 mm']], p.sensor.lod))}
-    ${group('Sensor', `
-      <div class="row"><span class="label">Motion Sync<small>Alinea las lecturas del sensor con los informes USB.</small></span>${toggle('motion', p.sensor.motionSync)}</div>
-      <div class="row"><span class="label">Corrección de ondulación<small>Suaviza el temblor a DPI muy altos.</small></span>${toggle('ripple', p.sensor.ripple)}</div>
-      <div class="row"><span class="label">Ajuste de ángulo<small>Endereza líneas casi rectas.</small></span>${toggle('snap', p.sensor.angleSnap)}</div>
-      <div class="row"><span class="label">Respuesta de botones<small>Antirrebote. Súbelo si notas dobles clics.</small></span>
+    ${group(t('perf.polling'), `${pills('polling', S.catalog.pollingRates.map((r, i) => [i, r]), p.pollingIndex)}
+      <p class="hint">${t('perf.pollingHint')}</p>`)}
+    ${group(t('perf.lod'), pills('lod', [[0, t('perf.lodLow')], [1, t('perf.lodHigh')]], p.sensor.lod))}
+    ${group(t('perf.sensor'), `
+      <div class="row"><span class="label">${t('perf.motion')}<small>${t('perf.motionHint')}</small></span>${toggle('motion', p.sensor.motionSync)}</div>
+      <div class="row"><span class="label">${t('perf.ripple')}<small>${t('perf.rippleHint')}</small></span>${toggle('ripple', p.sensor.ripple)}</div>
+      <div class="row"><span class="label">${t('perf.snap')}<small>${t('perf.snapHint')}</small></span>${toggle('snap', p.sensor.angleSnap)}</div>
+      <div class="row"><span class="label">${t('perf.debounce')}<small>${t('perf.debounceHint')}</small></span>
         <input type="range" class="range" id="debounce" min="0" max="15" value="${p.debounce}"><span class="value" id="debounce-v">${p.debounce * 2} ms</span></div>`)}`;
   renderDpiBoard();
   bindPills(panel, 'polling', (v) => { p.pollingIndex = Number(v); changed(); });
@@ -283,10 +294,10 @@ function renderDpiBoard() {
     ${enabled.map(({ s, i }, n) => `
       <div class="dpi-col" data-stage="${i}" aria-current="${i === p.dpi.active}">
         <span class="dpi-n">${n + 1}</span>
-        <div class="vslider" role="slider" tabindex="0" aria-label="DPI del nivel ${n + 1}" aria-valuemin="${DPI_MIN}"
+        <div class="vslider" role="slider" tabindex="0" aria-label="${t('dpi.levelAria', { n: n + 1 })}" aria-valuemin="${DPI_MIN}"
           aria-valuemax="${DPI_MAX}" aria-valuenow="${s.dpi}" style="--t:${posFromDpi(s.dpi) / 1000}"><i></i><b></b></div>
-        <input type="number" class="dpi-num" min="${DPI_MIN}" max="${DPI_MAX}" step="50" value="${s.dpi}" aria-label="Valor del nivel ${n + 1}">
-        <input type="color" class="dpi-color" value="${esc(s.color)}" aria-label="Color del nivel ${n + 1}">
+        <input type="number" class="dpi-num" min="${DPI_MIN}" max="${DPI_MAX}" step="50" value="${s.dpi}" aria-label="${t('dpi.valueAria', { n: n + 1 })}">
+        <input type="color" class="dpi-color" value="${esc(s.color)}" aria-label="${t('dpi.colorAria', { n: n + 1 })}">
       </div>`).join('')}`;
   showActiveDpi();
 
@@ -346,33 +357,33 @@ function renderButtons(panel) {
   if (!d.buttons.some((x) => x.slot === S.slot)) S.slot = d.buttons[0].slot;
   const cur = d.buttons.find((x) => x.slot === S.slot);
   const b = p.buttons[S.slot];
-  $('#drawer-kicker').textContent = 'Asignar';
-  $('#drawer-title').textContent = cur.name;
+  $('#drawer-kicker').textContent = t('kicker.assign');
+  $('#drawer-title').textContent = btnName(cur);
 
   const groups = [...new Set(S.catalog.buttonFunctions.map((f) => f.group))];
-  const fnOptions = groups.map((g) => `<optgroup label="${esc(g)}">${S.catalog.buttonFunctions.filter((f) => f.group === g)
-    .map((f) => `<option value="${f.id}" ${f.id === b.fn ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</optgroup>`).join('');
+  const fnOptions = groups.map((g) => `<optgroup label="${esc(t(`group.${g}`))}">${S.catalog.buttonFunctions.filter((f) => f.group === g)
+    .map((f) => `<option value="${f.id}" ${f.id === b.fn ? 'selected' : ''}>${esc(t(`fn.${f.id}`))}</option>`).join('')}</optgroup>`).join('');
   // Control adicional: tecla capturada para "Combinación" o macro elegida.
   let extra = '';
   if (b.fn === S.catalog.fn.SHORTCUT) {
-    extra = `<button class="capture" id="capture">${b.key ? esc(comboName(b.mod, b.key)) : 'Haz clic y pulsa la combinación'}</button>`;
+    extra = `<button class="capture" id="capture">${b.key ? esc(comboName(b.mod, b.key)) : t('btns.capture')}</button>`;
   } else if (b.fn === S.catalog.fn.MACRO) {
     extra = p.macros.length
-      ? `<select id="macro-pick" aria-label="Macro"><option value="">Elige una macro</option>${p.macros.map((m) =>
+      ? `<select id="macro-pick" aria-label="Macro"><option value="">${t('btns.pickMacro')}</option>${p.macros.map((m) =>
           `<option value="${esc(m.id)}" ${m.id === b.macroId ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select>`
-      : '<p class="hint">Este perfil no tiene macros. Créalas en la sección Macros.</p>';
+      : `<p class="hint">${t('btns.noMacros')}</p>`;
   }
 
   panel.innerHTML = `
-    ${group('Función', `<select id="fn" aria-label="Función de ${esc(cur.name)}">${fnOptions}</select>${extra ? `<div class="extra">${extra}</div>` : ''}`, true)}
-    ${group('Todos los botones', `<div class="btn-list">${d.buttons.map((x) => `
-      <button class="btn-item" data-slot="${x.slot}" aria-current="${x.slot === S.slot}"><span>${esc(x.name)}</span><span class="fn">${esc(fnLabel(p.buttons[x.slot]))}</span></button>`).join('')}</div>`)}`;
+    ${group(t('btns.function'), `<select id="fn" aria-label="${esc(t('btns.functionAria', { name: btnName(cur) }))}">${fnOptions}</select>${extra ? `<div class="extra">${extra}</div>` : ''}`, true)}
+    ${group(t('btns.all'), `<div class="btn-list">${d.buttons.map((x) => `
+      <button class="btn-item" data-slot="${x.slot}" aria-current="${x.slot === S.slot}"><span>${esc(btnName(x))}</span><span class="fn">${esc(fnLabel(p.buttons[x.slot]))}</span></button>`).join('')}</div>`)}`;
 
   $('#fn').addEventListener('change', (e) => {
     const fn = Number(e.target.value);
     const othersLeft = p.buttons.some((x, k) => k !== S.slot && x.fn === S.catalog.fn.LEFT);
     if (b.fn === S.catalog.fn.LEFT && fn !== S.catalog.fn.LEFT && !othersLeft) {
-      toast('Deja al menos un botón como "Clic izquierdo" o no podrás hacer clic.', true);
+      toast(t('btns.keepLeft'), true);
       return renderButtons(panel);
     }
     b.fn = fn;
@@ -392,7 +403,7 @@ function renderButtons(panel) {
       const mods = modsFromEvent(e);
       if (isModifierCode(e.code)) { cap.textContent = comboName(mods, 0) + ' + …'; return; }
       const hid = hidFromCode(e.code);
-      if (!hid) { cap.textContent = 'Esa tecla no está soportada, prueba otra'; return; }
+      if (!hid) { cap.textContent = t('btns.unsupported'); return; }
       b.mod = mods; b.key = hid;
       stop(); changed();
       renderButtons(panel); renderStage();
@@ -400,7 +411,7 @@ function renderButtons(panel) {
     const stop = () => { cap.classList.remove('listening'); window.removeEventListener('keydown', onKey, true); };
     cap.addEventListener('click', () => {
       cap.classList.add('listening');
-      cap.textContent = 'Pulsa la combinación…';
+      cap.textContent = t('btns.listening');
       window.addEventListener('keydown', onKey, true);
     });
     cap.addEventListener('blur', stop);
@@ -414,10 +425,6 @@ const DPI_COLOR_MODES = new Set([5, 6]); // toman el color del nivel de DPI acti
 const RAINBOW_MODES = [3, 4, 7, 10, 11];
 // Orden de los efectos: las variantes "color del nivel de DPI" junto a su efecto base.
 const LIGHT_ORDER = [0, 1, 2, 5, 6, 3, 4, 7, 8, 9, 10, 11];
-const LIGHT_SHORT = {
-  0: 'Apagado', 1: 'Estático', 2: 'Respiración', 5: 'DPI · Estático', 6: 'DPI · Respiración', 3: 'Neón',
-  4: 'Respiración multicolor', 7: 'Onda arcoíris', 8: 'Relámpago', 9: 'Mezcla estática', 10: 'Marquesina', 11: 'Marquesina 2',
-};
 const S16 = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
 const LIGHT_ICONS = {
   0: `<circle cx="12" cy="12" r="7" ${S16} stroke-dasharray="2 3"/>`,
@@ -440,16 +447,16 @@ function renderLight(panel) {
   const usesColor = L.mode !== 0 && !DPI_COLOR_MODES.has(L.mode) && !RAINBOW_MODES.includes(L.mode);
   const inPalette = PALETTE.includes(L.color.toLowerCase());
   panel.innerHTML = `
-    ${group('Efecto', `<div class="effects">${LIGHT_ORDER.map((i) => `
-      <button data-mode="${i}" aria-pressed="${i === L.mode}"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">${LIGHT_ICONS[i]}</svg>${LIGHT_SHORT[i]}</button>`).join('')}</div>`, true)}
-    ${usesColor ? group('Color', `<div class="swatches">${PALETTE.map((c) =>
-      `<button data-color="${c}" style="background:${c}" aria-pressed="${c === L.color.toLowerCase()}" aria-label="Color ${c}"></button>`).join('')}
-      <label class="${inPalette ? '' : 'on'}" title="Otro color"><input type="color" id="lcolor" value="${esc(L.color)}" aria-label="Otro color">
+    ${group(t('light.effect'), `<div class="effects">${LIGHT_ORDER.map((i) => `
+      <button data-mode="${i}" aria-pressed="${i === L.mode}"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">${LIGHT_ICONS[i]}</svg>${t(`mode.${i}`)}</button>`).join('')}</div>`, true)}
+    ${usesColor ? group(t('light.color'), `<div class="swatches">${PALETTE.map((c) =>
+      `<button data-color="${c}" style="background:${c}" aria-pressed="${c === L.color.toLowerCase()}" aria-label="${t('light.colorAria', { c })}"></button>`).join('')}
+      <label class="${inPalette ? '' : 'on'}" title="${t('light.other')}"><input type="color" id="lcolor" value="${esc(L.color)}" aria-label="${t('light.other')}">
         <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></label></div>`) : ''}
-    ${L.mode !== 0 ? group('Ajustes', `
-      <div class="row"><span class="label">Brillo<small>Solo en Estático y Mezcla estática.</small></span>
+    ${L.mode !== 0 ? group(t('light.settings'), `
+      <div class="row"><span class="label">${t('light.brightness')}<small>${t('light.brightnessHint')}</small></span>
         <input type="range" class="range" id="bright" min="0" max="8" value="${L.brightness}" ${STATIC_MODES.has(L.mode) ? '' : 'disabled'}><span class="value" id="bright-v">${L.brightness}/8</span></div>
-      <div class="row"><span class="label">Velocidad</span>
+      <div class="row"><span class="label">${t('light.speed')}</span>
         <input type="range" class="range" id="speed" min="1" max="8" value="${L.speed}"><span class="value" id="speed-v">${L.speed}/8</span></div>`) : ''}`;
 
   $$('[data-mode]', panel).forEach((b) => b.addEventListener('click', () => { L.mode = Number(b.dataset.mode); changed(); renderLight(panel); refreshGlow(); }));
@@ -469,15 +476,15 @@ function renderLight(panel) {
 function renderPower(panel) {
   const P = prof().power;
   panel.innerHTML = `
-    ${group('Ahorro de batería', `
-      <div class="row"><span class="label">Apagar la luz tras<small>Minutos sin uso.</small></span>
+    ${group(t('power.saving'), `
+      <div class="row"><span class="label">${t('power.lightOff')}<small>${t('power.lightOffHint')}</small></span>
         <input type="range" class="range" id="sleep" min="1" max="15" value="${P.sleep}"><span class="value" id="sleep-v">${P.sleep} min</span></div>
-      <div class="row"><span class="label">Reposo profundo tras<small>Ahorra más; tarda un instante en despertar.</small></span>
+      <div class="row"><span class="label">${t('power.deep')}<small>${t('power.deepHint')}</small></span>
         <input type="range" class="range" id="deep" min="1" max="15" value="${P.deepSleep}"><span class="value" id="deep-v">${P.deepSleep} min</span></div>
-      <p class="hint">Solo afecta al modo inalámbrico. El ratón despierta al moverlo.</p>`, true)}
-    ${group('Mantenimiento', `
-      <div class="row"><span class="label">Restaurar valores de fábrica<small>Borra la configuración guardada en el ratón y vuelve a los valores por defecto.</small></span>
-        <button class="btn ghost small" id="factory">Restaurar</button></div>`)}`;
+      <p class="hint">${t('power.wirelessHint')}</p>`, true)}
+    ${group(t('power.maint'), `
+      <div class="row"><span class="label">${t('power.factory')}<small>${t('power.factoryHint')}</small></span>
+        <button class="btn ghost small" id="factory">${t('power.restore')}</button></div>`)}`;
   for (const [id, field] of [['sleep', 'sleep'], ['deep', 'deepSleep']]) {
     const r = $('#' + id);
     setFill(r);
@@ -487,17 +494,17 @@ function renderPower(panel) {
 }
 
 async function factoryReset() {
-  const ok = await ask({ title: 'Restaurar fábrica', text: 'Se borrará la configuración guardada en el ratón y volverá a los valores por defecto.', ok: 'Restaurar' });
+  const ok = await ask({ title: t('power.factoryTitle'), text: t('power.factoryText'), ok: t('power.restore') });
   if (!ok) return;
   const r = await api.reset(S.key);
-  if (!r.ok) return toast(r.error, true);
+  if (!r.ok) return toast(errorText(r), true);
   S.entry.profiles[S.profileIdx] = await api.defaultProfile(prof().name);
   persist(); renderAll();
   await applyProfile();
 }
 
 /* ——— Macros ——— */
-const MACRO_MODES = [[1, 'Repetir N veces'], [2, 'Hasta pulsar otra tecla'], [3, 'Mientras se mantiene pulsado']];
+const MACRO_MODES = [1, 2, 3]; // repetir N veces, hasta pulsar otra tecla, mientras se mantiene pulsado
 let recorder = null;
 function stopRecording() {
   if (!recorder) return;
@@ -514,29 +521,29 @@ function renderMacros(panel) {
   const m = p.macros[S.macroIdx];
   const max = S.catalog.macroEventsMax;
   panel.innerHTML = `
-    ${group('Tus macros', `<div class="btn-list">${p.macros.map((x, i) => `<button class="btn-item" data-mi="${i}" aria-current="${i === S.macroIdx}">
-      <span>${esc(x.name)}</span><span class="fn">${x.events.length} pasos</span></button>`).join('') || '<p class="empty-note">Aún no hay macros. Graba una secuencia de teclas y asígnala a un botón.</p>'}</div>
-      <div class="toolbar"><button class="btn ghost small" id="macro-new">Nueva macro</button></div>`, true)}
-    ${m ? group('Editor', `
-      <div class="row"><span class="label">Nombre</span><input type="text" id="m-name" value="${esc(m.name)}" maxlength="24" style="width:200px"></div>
-      <div class="row"><span class="label">Reproducción</span><span style="display:flex;gap:8px;width:220px">
-        <select id="m-mode" aria-label="Reproducción">${MACRO_MODES.map(([v, l]) => `<option value="${v}" ${v === m.mode ? 'selected' : ''}>${l}</option>`).join('')}</select>
-        <input type="number" id="m-loops" min="1" max="255" value="${m.loops}" ${m.mode === 1 ? '' : 'hidden'} aria-label="Repeticiones" style="width:64px;flex:none"></span></div>
+    ${group(t('macros.yours'), `<div class="btn-list">${p.macros.map((x, i) => `<button class="btn-item" data-mi="${i}" aria-current="${i === S.macroIdx}">
+      <span>${esc(x.name)}</span><span class="fn">${t('macros.steps', { n: x.events.length })}</span></button>`).join('') || `<p class="empty-note">${t('macros.none')}</p>`}</div>
+      <div class="toolbar"><button class="btn ghost small" id="macro-new">${t('macros.new')}</button></div>`, true)}
+    ${m ? group(t('macros.editor'), `
+      <div class="row"><span class="label">${t('macros.name')}</span><input type="text" id="m-name" value="${esc(m.name)}" maxlength="24" style="width:200px"></div>
+      <div class="row"><span class="label">${t('macros.playback')}</span><span style="display:flex;gap:8px;width:220px">
+        <select id="m-mode" aria-label="${t('macros.playback')}">${MACRO_MODES.map((v) => `<option value="${v}" ${v === m.mode ? 'selected' : ''}>${t(`macros.mode${v}`)}</option>`).join('')}</select>
+        <input type="number" id="m-loops" min="1" max="255" value="${m.loops}" ${m.mode === 1 ? '' : 'hidden'} aria-label="${t('macros.loops')}" style="width:64px;flex:none"></span></div>
       <div class="toolbar">
-        <button class="btn primary small" id="m-rec">Grabar</button>
-        <button class="btn ghost small" id="m-clear">Vaciar</button>
+        <button class="btn primary small" id="m-rec">${t('macros.record')}</button>
+        <button class="btn ghost small" id="m-clear">${t('macros.clear')}</button>
         <span id="m-status" class="muted"></span>
-        <button class="link" id="m-del">Eliminar macro</button>
+        <button class="link" id="m-del">${t('macros.delete')}</button>
       </div>
-      <p class="hint" id="m-count">${m.events.length} de ${max} pasos</p>
-      ${m.events.length ? `<table class="events"><thead><tr><th>Tecla</th><th>Acción</th><th>Espera (ms)</th><th></th></tr></thead><tbody>
-        ${m.events.map((ev, i) => `<tr><td><span class="kbd">${esc(keyName(ev.key))}</span></td><td>${ev.down ? 'Pulsar' : 'Soltar'}</td>
-          <td><input type="number" min="0" max="65535" value="${ev.delay}" data-delay="${i}" aria-label="Espera"></td>
-          <td><button class="link" data-del="${i}" aria-label="Quitar paso">✕</button></td></tr>`).join('')}
-      </tbody></table>` : '<p class="empty-note">Pulsa Grabar y escribe la secuencia en el teclado. Se guardan las esperas reales entre teclas.</p>'}`) : ''}`;
+      <p class="hint" id="m-count">${t('macros.count', { n: m.events.length, max })}</p>
+      ${m.events.length ? `<table class="events"><thead><tr><th>${t('macros.key')}</th><th>${t('macros.action')}</th><th>${t('macros.wait')}</th><th></th></tr></thead><tbody>
+        ${m.events.map((ev, i) => `<tr><td><span class="kbd">${esc(keyName(ev.key))}</span></td><td>${ev.down ? t('macros.press') : t('macros.release')}</td>
+          <td><input type="number" min="0" max="65535" value="${ev.delay}" data-delay="${i}" aria-label="${t('macros.waitAria')}"></td>
+          <td><button class="link" data-del="${i}" aria-label="${t('macros.removeStep')}">✕</button></td></tr>`).join('')}
+      </tbody></table>` : `<p class="empty-note">${t('macros.recordHint')}</p>`}`) : ''}`;
 
   $('#macro-new').addEventListener('click', () => {
-    p.macros.push({ id: 'm' + Date.now().toString(36), name: `Macro ${p.macros.length + 1}`, mode: 1, loops: 1, events: [] });
+    p.macros.push({ id: 'm' + Date.now().toString(36), name: t('macros.defaultName', { n: p.macros.length + 1 }), mode: 1, loops: 1, events: [] });
     S.macroIdx = p.macros.length - 1;
     changed(); renderMacros(panel);
   });
@@ -547,7 +554,7 @@ function renderMacros(panel) {
   $('#m-loops').addEventListener('change', (e) => { m.loops = Math.min(255, Math.max(1, Number(e.target.value) || 1)); changed(); });
   $('#m-clear').addEventListener('click', () => { m.events = []; changed(); renderMacros(panel); });
   $('#m-del').addEventListener('click', async () => {
-    if (!(await ask({ title: 'Eliminar macro', text: `Los botones que usen "${m.name}" quedarán desactivados.`, ok: 'Eliminar' }))) return;
+    if (!(await ask({ title: t('macros.deleteTitle'), text: t('macros.deleteText', { name: m.name }), ok: t('macros.deleteOk') }))) return;
     p.buttons.forEach((b) => { if (b.macroId === m.id) { b.fn = 0; b.macroId = null; } });
     p.macros.splice(S.macroIdx, 1);
     changed(); renderMacros(panel);
@@ -564,19 +571,19 @@ function renderMacros(panel) {
       ev.preventDefault(); ev.stopPropagation();
       const key = hidFromCode(ev.code);
       if (!key) return;
-      if (m.events.length >= max) { stopRecording(); renderMacros(panel); return toast('La macro ya tiene el máximo de pasos.', true); }
+      if (m.events.length >= max) { stopRecording(); renderMacros(panel); return toast(t('macros.full'), true); }
       const now = performance.now();
       m.events.push({ key, down: ev.type === 'keydown', delay: m.events.length ? Math.round(now - last) : 10 });
       last = now;
       changed();
-      $('#m-count').textContent = `${m.events.length} de ${max} pasos`;
+      $('#m-count').textContent = t('macros.count', { n: m.events.length, max });
     };
     window.addEventListener('keydown', recorder, true);
     window.addEventListener('keyup', recorder, true);
-    e.target.textContent = 'Detener';
+    e.target.textContent = t('macros.stop');
     e.target.blur();
     const status = $('#m-status');
-    status.textContent = '● Grabando…';
+    status.textContent = t('macros.recording');
     status.classList.add('recording');
   });
   enhanceAll(panel);
@@ -584,16 +591,15 @@ function renderMacros(panel) {
 
 /* ——— Render general ——— */
 function renderRail() {
-  $('#rail').innerHTML = SECTIONS.map(([k, n]) =>
-    `<button role="tab" data-tab="${k}" aria-selected="${k === S.tab}" aria-label="${n}">${icon(k)}<span class="tip">${n}</span></button>`).join('')
-    + `<button class="gear" id="open-settings" aria-label="Configuración del programa">${icon('gear')}<span class="tip">Configuración</span></button>`;
+  $('#rail').innerHTML = SECTIONS.map((k) =>
+    `<button role="tab" data-tab="${k}" aria-selected="${k === S.tab}" aria-label="${t(`sec.${k}`)}">${icon(k)}<span class="tip">${t(`sec.${k}`)}</span></button>`).join('')
+    + `<button class="gear" id="open-settings" aria-label="${t('rail.settingsAria')}">${icon('gear')}<span class="tip">${t('rail.settings')}</span></button>`;
 }
 function renderPanel() {
   stopRecording();
   $$('#rail [role="tab"]').forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === S.tab)));
-  const [, title] = SECTIONS.find(([k]) => k === S.tab);
-  $('#drawer-kicker').textContent = 'Configuración';
-  $('#drawer-title').textContent = title;
+  $('#drawer-kicker').textContent = t('kicker.settings');
+  $('#drawer-title').textContent = t(`sec.${S.tab}`);
   const panel = $('#panel');
   ({ perf: renderPerf, buttons: renderButtons, light: renderLight, power: renderPower, macros: renderMacros })[S.tab](panel);
   panel.scrollTop = 0;
@@ -606,26 +612,35 @@ function renderAll() {
 }
 
 /* ——— Aplicar y descartar ——— */
+/** Mensaje de un error devuelto por el proceso principal ({ code, problems, error }). */
+function errorText(r) {
+  if (r.code === 'invalidProfile' && r.problems?.length) return r.problems.map((p) => t(`err.${p}`)).join(' ');
+  const key = `err.${r.code}`;
+  return t(key) !== key ? t(key) : t('err.unknown', { detail: r.error || r.code });
+}
+/** Nombre de un paquete enviado ("DPI y sensor", "Macro del botón 3 (1/3)"…). */
+const packetName = (x) => (x.key ? t(`pkt.${x.key}`, x.params) : x.label);
+
 async function applyProfile() {
   if (S.applying) return;
   S.applying = true;
   const btn = $('#apply');
   btn.disabled = true;
-  btn.textContent = 'Enviando…';
+  btn.textContent = t('foot.sending');
   const r = await api.apply(S.key, prof());
   S.applying = false;
   btn.disabled = false;
-  btn.textContent = 'Aplicar';
-  if (!r.ok) return toast(r.error, true);
-  const failed = r.results.filter((x) => !x.ok).map((x) => x.label);
-  const unconfirmed = r.results.filter((x) => x.ok && x.acked === null).map((x) => x.label);
-  if (failed.length) return toast(`No se pudo enviar: ${failed.join(', ')}. Comprueba que el ratón esté encendido.`, true);
+  btn.textContent = t('foot.apply');
+  if (!r.ok) return toast(errorText(r), true);
+  const failed = r.results.filter((x) => !x.ok).map(packetName);
+  const unconfirmed = r.results.filter((x) => x.ok && x.acked === null).map(packetName);
+  if (failed.length) return toast(t('apply.failed', { list: failed.join(', ') }), true);
   setDirty(false);
   snapshot();
   S.entry.activeProfile = S.profileIdx;
   persist();
-  if (unconfirmed.length) toast(`Aplicado, pero el ratón no confirmó: ${unconfirmed.join(', ')}. Muévelo para despertarlo y vuelve a aplicar.`, true);
-  else toast('Cambios aplicados al ratón.');
+  if (unconfirmed.length) toast(t('apply.unconfirmed', { list: unconfirmed.join(', ') }), true);
+  else toast(t('apply.ok'));
 }
 
 function discardChanges() {
@@ -634,7 +649,7 @@ function discardChanges() {
   setDirty(false);
   persist();
   renderAll();
-  toast('Cambios descartados.');
+  toast(t('apply.discarded'));
 }
 
 /* ——— Configuración del programa ——— */
@@ -648,7 +663,18 @@ function renderPrefs() {
     $(id).classList.toggle('on', on);
     $(id).setAttribute('aria-checked', String(on));
   }
+  $('#lang-pick').innerHTML = LANGUAGES.map(([code, name]) =>
+    `<button type="button" role="radio" data-lang="${code}" lang="${code}" aria-checked="${code === getLang()}">${name}</button>`).join('');
   if (prefs.version) $('#app-version').textContent = `Open Shark ${prefs.version}`;
+}
+/** Cambia el idioma de toda la interfaz sin recargar (se conservan los cambios sin aplicar). */
+function applyLanguage(lang) {
+  setLang(lang);
+  translateDom();
+  $('#empty-mouse').innerHTML = mouseArt();
+  renderRail();
+  if (S.entry) renderAll();
+  renderPrefs();
 }
 async function setPrefs(patch) {
   prefs = await api.setPrefs(patch);
@@ -659,6 +685,12 @@ function bindSettings() {
   $('#theme-pick').addEventListener('click', (e) => {
     const b = e.target.closest('[data-theme-opt]');
     if (b) setPrefs({ theme: b.dataset.themeOpt });
+  });
+  $('#lang-pick').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-lang]');
+    if (!b || b.dataset.lang === getLang()) return;
+    prefs = await api.setPrefs({ lang: b.dataset.lang });
+    applyLanguage(prefs.lang);
   });
   $('#opt-tray').addEventListener('click', () => setPrefs({ tray: !prefs.tray }));
   $('#opt-login').addEventListener('click', () => setPrefs({ login: !prefs.login }));
@@ -697,7 +729,7 @@ function bindChrome() {
     const prev = new Map(S.devices.map((d) => [d.key, d]));
     S.devices = list.map((d) => ({ ...d, nickname: prev.get(d.key)?.nickname, status: prev.get(d.key)?.status || d.status }));
     if (S.key && !S.devices.some((d) => d.key === S.key)) {
-      toast('El ratón se ha desconectado.', true);
+      toast(t('toast.disconnected'), true);
       showEmpty();
     }
     if (S.key) renderDeviceSwitch();
@@ -726,9 +758,11 @@ async function init() {
   applyTheme();
   S.catalog = await api.catalog();
   prefs = await api.getPrefs();
+  setLang(prefs.lang);
+  translateDom();
   $('#empty-mouse').innerHTML = mouseArt();
   const tab = new URLSearchParams(location.search).get('tab');
-  if (SECTIONS.some(([k]) => k === tab)) S.tab = tab;
+  if (SECTIONS.includes(tab)) S.tab = tab;
   bindChrome();
   S.devices = await api.listDevices();
   if (S.devices.length) selectDevice(S.devices[0].key);

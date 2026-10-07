@@ -114,7 +114,7 @@ Troceado: 3 reports de 64 B `09 LL NN idx` + 60 bytes de datos (desde el byte 3)
 |----------|-------------|
 | `0x1010` | Nivel de DPI cambiado en el ratón (V0 = 1–8) |
 | `0x2010` | Frecuencia cambiada (V0) |
-| `0x4010` | Estado: V0 = 1 conectado, 2 cargando, 3 en reposo; V1 = batería en decenas (1–10) |
+| `0x4010` | Estado: V0 = 1 conectado, 2 cargando, 3 en reposo (sin cable) o carga completa (con cable: el X6 envía `03 10 40 03 0a`); V1 = batería en decenas (1–10) |
 | `0x5010` | ACK del último paquete (V0 = 0 → correcto) |
 | `0x7010` | Modo de luz cambiado (V0) |
 

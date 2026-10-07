@@ -34,23 +34,44 @@ function showWindow() {
   win.focus();
 }
 
+/* ——— Idioma: inglés por defecto; español si Windows está en español y no se eligió otro ——— */
+const MAIN_TEXT = {
+  en: {
+    open: 'Open Open Shark', login: 'Start with Windows', quit: 'Quit',
+    hintTitle: 'Open Shark is still running',
+    hintBody: 'It is in the system tray. Click the icon to open it, or right-click to quit.',
+  },
+  es: {
+    open: 'Abrir Open Shark', login: 'Iniciar con Windows', quit: 'Salir',
+    hintTitle: 'Open Shark sigue activo',
+    hintBody: 'Está en la bandeja del sistema. Haz clic en el icono para abrirlo o clic derecho para salir.',
+  },
+};
+const LANGS = Object.keys(MAIN_TEXT);
+function currentLang() {
+  const chosen = store?.prefs().lang;
+  if (LANGS.includes(chosen)) return chosen;
+  return app.getLocale().toLowerCase().startsWith('es') ? 'es' : 'en';
+}
+const T = () => MAIN_TEXT[currentLang()];
+
 /* ——— Bandeja del sistema: la app sigue activa al cerrar la ventana ——— */
 const loginArgs = () => (app.isPackaged ? ['--hidden'] : [app.getAppPath(), '--hidden']);
 const startsWithWindows = () => app.getLoginItemSettings({ path: process.execPath, args: loginArgs() }).openAtLogin;
 
 function buildTrayMenu() {
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Abrir Open Shark', click: showWindow },
+    { label: T().open, click: showWindow },
     { type: 'separator' },
     {
-      label: 'Iniciar con Windows', type: 'checkbox', checked: startsWithWindows(),
+      label: T().login, type: 'checkbox', checked: startsWithWindows(),
       click: (item) => {
         app.setLoginItemSettings({ openAtLogin: item.checked, path: process.execPath, args: loginArgs() });
         buildTrayMenu();
       },
     },
     { type: 'separator' },
-    { label: 'Salir', click: () => { quitting = true; app.quit(); } },
+    { label: T().quit, click: () => { quitting = true; app.quit(); } },
   ]));
 }
 
@@ -109,8 +130,7 @@ function createWindow() {
     win.hide();
     if (!trayHintShown) {
       trayHintShown = true;
-      tray?.displayBalloon({ iconType: 'info', title: 'Open Shark sigue activo',
-        content: 'Está en la bandeja del sistema. Haz clic en el icono para abrirlo o clic derecho para salir.' });
+      tray?.displayBalloon({ iconType: 'info', title: T().hintTitle, content: T().hintBody });
     }
   });
   win.webContents.on('console-message', (e) => {
@@ -171,17 +191,17 @@ ipcMain.handle('catalog', () => ({
   fn: x6.FN,
   macroEventsMax: x6.MACRO_EVENTS_MAX,
 }));
-ipcMain.handle('prefs:get', () => ({ ...store.prefs(), login: startsWithWindows(), version: app.getVersion() }));
+const fullPrefs = () => ({ ...store.prefs(), lang: currentLang(), login: startsWithWindows(), version: app.getVersion() });
+ipcMain.handle('prefs:get', fullPrefs);
 ipcMain.handle('logs:open', () => shell.openPath(LOG_DIR));
 ipcMain.handle('prefs:set', (_e, patch) => {
   const { login, ...rest } = patch || {};
-  if (login !== undefined) {
-    app.setLoginItemSettings({ openAtLogin: !!login, path: process.execPath, args: loginArgs() });
-    buildTrayMenu();
-  }
+  if (login !== undefined) app.setLoginItemSettings({ openAtLogin: !!login, path: process.execPath, args: loginArgs() });
+  if (rest.lang && !LANGS.includes(rest.lang)) delete rest.lang;
   const prefs = store.setPrefs(rest);
   if (rest.theme) nativeTheme.themeSource = prefs.theme;
-  return { ...prefs, login: startsWithWindows(), version: app.getVersion() };
+  if (login !== undefined || rest.lang) buildTrayMenu();
+  return fullPrefs();
 });
 ipcMain.handle('devices:list', () => devices.list());
 ipcMain.handle('device:get', (_e, key, modelName) => store.device(key, modelName));
@@ -209,7 +229,7 @@ ipcMain.handle('device:apply', async (_e, key, profile) => {
     return { ok: true, results };
   } catch (e) {
     log.error('send', 'Aplicar perfil falló', e.message);
-    return { ok: false, error: e.message };
+    return { ok: false, code: e.code || 'unknown', problems: e.problems, error: e.message };
   }
 });
 ipcMain.handle('device:reset', async (_e, key) => {
@@ -219,7 +239,7 @@ ipcMain.handle('device:reset', async (_e, key) => {
     return { ok: true, results };
   } catch (e) {
     log.error('send', 'Restaurar fábrica falló', e.message);
-    return { ok: false, error: e.message };
+    return { ok: false, code: e.code || 'unknown', problems: e.problems, error: e.message };
   }
 });
 

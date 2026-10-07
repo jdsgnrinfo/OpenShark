@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 // Foto superior del ratón y su escenario: resplandor de la iluminación detrás y, en la
 // sección de botones, un punto sobre cada botón con una línea hasta su nombre y su función.
 // Coordenadas de los puntos en píxeles de la foto (402 × 750).
@@ -21,7 +22,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 /** Foto sola (pantalla de "conecta un ratón"). */
 export function mouseArt() {
-  return `<div class="mouse-art"><img src="${PHOTO.src}" alt="Attack Shark X6, vista superior" draggable="false"></div>`;
+  return `<div class="mouse-art"><img src="${PHOTO.src}" alt="${t('mouse.alt')}" draggable="false"></div>`;
 }
 
 /**
@@ -47,7 +48,7 @@ export function mouseStage({ buttons = null, selected = null } = {}) {
   }
   return `<div class="canvas" id="canvas">
     <div class="glow" id="glow"></div>
-    <img class="mouse" src="${PHOTO.src}" alt="Attack Shark X6, vista superior" draggable="false"
+    <img class="mouse" src="${PHOTO.src}" alt="${t('mouse.alt')}" draggable="false"
       style="left:${CANVAS.photoX}px;top:${CANVAS.photoY}px;width:${CANVAS.photoW}px">
     <svg class="lines" viewBox="0 0 ${CANVAS.w} ${CANVAS.h}" aria-hidden="true">${paths}</svg>
     ${marks}

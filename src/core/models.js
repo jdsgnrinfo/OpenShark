@@ -20,14 +20,15 @@ const MODELS = [
     eventUsagePage: 0x0a, // colección con los reports de estado (batería, DPI, ACK)
     protocol: x6,
     // Ranuras físicas del X6. El firmware admite 18; las demás no tienen botón.
+    // `id` es la clave con la que la interfaz nombra el botón en cada idioma.
     buttons: [
-      { slot: 0, name: 'Clic izquierdo', short: 'Izq.' },
-      { slot: 1, name: 'Clic derecho', short: 'Der.' },
-      { slot: 2, name: 'Rueda', short: 'Rueda' },
-      { slot: 3, name: 'Botón DPI', short: 'DPI' },
-      { slot: 8, name: 'Botón de modo', short: 'Modo' }, // segundo botón bajo la rueda (de fábrica: "Cambio de modo")
-      { slot: 6, name: 'Lateral delantero', short: 'Lat. 1' },
-      { slot: 7, name: 'Lateral trasero', short: 'Lat. 2' },
+      { slot: 0, id: 'left', name: 'Left button' },
+      { slot: 1, id: 'right', name: 'Right button' },
+      { slot: 2, id: 'wheel', name: 'Wheel' },
+      { slot: 3, id: 'dpi', name: 'DPI button' },
+      { slot: 8, id: 'mode', name: 'Mode button' }, // segundo botón bajo la rueda (de fábrica: "Cambio de modo")
+      { slot: 6, id: 'sideFront', name: 'Front side button' },
+      { slot: 7, id: 'sideBack', name: 'Rear side button' },
     ],
   },
 ];

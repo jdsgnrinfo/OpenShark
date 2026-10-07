@@ -26,6 +26,7 @@
   "build": {
     "appId": "com.openshark.app",
     "productName": "Open Shark",
+    "asar": false,
     "directories": {
       "output": "dist"
     },

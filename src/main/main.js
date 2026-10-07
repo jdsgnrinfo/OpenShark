@@ -185,6 +185,9 @@ function createWindow() {
         dialogo: document.querySelector('#dialog')?.open,
         ajustes: document.querySelector('#settings')?.open,
       }, null, 1)`));
+      // Termina solo y de forma ordenada (cerrar los procesos a la fuerza deja avisos falsos en la consola).
+      quitting = true;
+      app.quit();
     }, 4000));
   }
 }

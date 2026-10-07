@@ -48,7 +48,10 @@ const MAIN_TEXT = {
   },
 };
 const LANGS = Object.keys(MAIN_TEXT);
+// `--lang=en|es` fuerza un idioma sin guardarlo (útil para capturas).
+const langArg = process.argv.find((a) => a.startsWith('--lang='))?.slice(7);
 function currentLang() {
+  if (LANGS.includes(langArg)) return langArg;
   const chosen = store?.prefs().lang;
   if (LANGS.includes(chosen)) return chosen;
   return app.getLocale().toLowerCase().startsWith('es') ? 'es' : 'en';
@@ -120,6 +123,8 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // Con --capture se dibuja fuera de pantalla: la captura sale aunque la pantalla esté bloqueada o apagada.
+      offscreen: process.argv.some((a) => a.startsWith('--capture=')),
     },
   });
   // Con "Mantener en la bandeja" activo, cerrar la ventana la oculta; "Salir" en el icono cierra de verdad.

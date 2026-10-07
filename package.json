@@ -1,7 +1,7 @@
 {
   "name": "open-shark",
   "productName": "Open Shark",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Configurador abierto para ratones Attack Shark, con soporte para varios ratones a la vez.",
   "main": "src/main/main.js",
   "license": "MIT",

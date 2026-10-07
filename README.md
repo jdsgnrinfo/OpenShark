@@ -16,7 +16,7 @@ official one, built for people who own more than one mouse from the brand.
 Each connected mouse shows its connection and battery, and keeps its own
 settings.
 
-![Open Shark: sensitivity](docs/capturas/sensibilidad.png)
+![Open Shark: sensitivity](docs/screenshots/sensitivity.png)
 
 > **Only tested with the Attack Shark X6** (2.4 GHz receiver and cable).
 > Other models from the brand may work, fully or partly, if they use the same
@@ -28,7 +28,7 @@ documented (in Spanish) in [docs/PROTOCOL.md](docs/PROTOCOL.md).
 
 | Button mapping | Lighting | Settings |
 |---|---|---|
-| ![Button mapping](docs/capturas/botones.png) | ![Lighting](docs/capturas/iluminacion.png) | ![Program settings](docs/capturas/configuracion.png) |
+| ![Button mapping](docs/screenshots/buttons.png) | ![Lighting](docs/screenshots/lighting.png) | ![Program settings](docs/screenshots/settings.png) |
 
 ## What you can configure
 

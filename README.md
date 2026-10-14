@@ -11,6 +11,8 @@
 
 <p align="center"><b>English</b> · <a href="README.es.md">Español</a></p>
 
+<p align="center"><a href="https://paypal.me/jotica96"><img src="https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a></p>
+
 An open configurator for **Attack Shark** mice: a clearer interface than the
 official one, built for people who own more than one mouse from the brand.
 Each connected mouse shows its connection and battery, and keeps its own

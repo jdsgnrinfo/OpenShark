@@ -11,6 +11,8 @@
 
 <p align="center"><a href="README.md">English</a> · <b>Español</b></p>
 
+<p align="center"><a href="https://paypal.me/jotica96"><img src="https://img.shields.io/badge/PayPal-Donar-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a></p>
+
 Configurador abierto para ratones **Attack Shark**: una interfaz más clara que la
 oficial y pensada para quien tiene varios ratones de la marca. Cada ratón
 conectado muestra su conexión y su batería, y guarda su propia configuración.

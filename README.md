@@ -11,7 +11,11 @@
 
 <p align="center"><b>English</b> · <a href="README.es.md">Español</a></p>
 
-<p align="center"><a href="https://paypal.me/jotica96"><img src="https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a></p>
+<p align="center">
+  <a href="https://github.com/jdsgnrinfo/OpenShark/releases/latest"><img src="https://img.shields.io/github/v/release/jdsgnrinfo/OpenShark?style=for-the-badge&label=Release&color=2ea043" alt="Release"></a>
+  <a href="https://paypal.me/jotica96"><img src="https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
+  <img src="https://img.shields.io/badge/Discord-byjota96-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord: byjota96" title="Discord: byjota96">
+</p>
 
 An open configurator for **Attack Shark** mice: a clearer interface than the
 official one, built for people who own more than one mouse from the brand.

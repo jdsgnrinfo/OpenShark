@@ -11,7 +11,11 @@
 
 <p align="center"><a href="README.md">English</a> · <b>Español</b></p>
 
-<p align="center"><a href="https://paypal.me/jotica96"><img src="https://img.shields.io/badge/PayPal-Donar-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a></p>
+<p align="center">
+  <a href="https://github.com/jdsgnrinfo/OpenShark/releases/latest"><img src="https://img.shields.io/github/v/release/jdsgnrinfo/OpenShark?style=for-the-badge&label=Release&color=2ea043" alt="Release"></a>
+  <a href="https://paypal.me/jotica96"><img src="https://img.shields.io/badge/PayPal-Donar-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"></a>
+  <img src="https://img.shields.io/badge/Discord-byjota96-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord: byjota96" title="Discord: byjota96">
+</p>
 
 Configurador abierto para ratones **Attack Shark**: una interfaz más clara que la
 oficial y pensada para quien tiene varios ratones de la marca. Cada ratón
